@@ -1,5 +1,7 @@
 # 买房 VS 租房 / 卖房 VS 留房 决策计算器
 
+**在线体验**：https://housing-decision-calc.vercel.app
+
 两个纯前端的房产决策计算器，不含后端、不含数据库，所有计算都在浏览器本地完成。
 
 | 页面 | 文件 | 回答的问题 |
@@ -58,7 +60,9 @@ python -m http.server 8080
 
 ## 部署到 Vercel
 
-### 方式一：GitHub 导入（推荐）
+线上地址：**https://housing-decision-calc.vercel.app**
+
+### 方式一：GitHub 导入（推荐，也是本项目采用的方式）
 
 1. 把本仓库推到 GitHub
 2. 打开 [vercel.com/new](https://vercel.com/new)，用 GitHub 账号登录
@@ -75,6 +79,13 @@ npm i -g vercel
 vercel            # 首次会引导登录
 vercel --prod     # 部署到生产环境
 ```
+
+### 访问路径
+
+| 路径 | 页面 |
+|---|---|
+| `/` | 买房 vs 租房 |
+| `/sell-vs-hold.html` | 卖房 vs 留房 |
 
 ## 技术栈
 
