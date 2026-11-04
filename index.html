@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>买房 VS 租房 对比计算器</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f0f4fa; color: #1f2d3d; }
+  header { background: linear-gradient(135deg, #1677ff, #0b5bd3); color: #fff; text-align: center; padding: 28px 16px; }
+  header h1 { font-size: 26px; letter-spacing: 2px; }
+  header p { font-size: 13px; opacity: .85; margin-top: 6px; }
+  .nav { display: flex; gap: 8px; justify-content: center; background: #fff; padding: 10px 16px; border-bottom: 1px solid #e5e9f0; flex-wrap: wrap; }
+  .nav a { padding: 8px 16px; border-radius: 20px; font-size: 14px; color: #475569; text-decoration: none; }
+  .nav a:hover { background: #f0f4fa; }
+  .nav a.on { background: #1677ff; color: #fff; }
+  .wrap { max-width: 1200px; margin: 20px auto; padding: 0 16px; display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
+  .wrap > * { min-width: 0; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } }
+  .card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,.05); }
+  .card + .card { margin-top: 20px; }
+  h2 { font-size: 16px; color: #334155; margin-bottom: 12px; }
+  .field { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #e5e9f0; }
+  .field:last-child { border-bottom: none; }
+  .field label { font-size: 13px; color: #475569; }
+  .field input { width: 130px; padding: 7px 10px; border: 1px solid #d6dde8; border-radius: 8px; font-size: 14px; text-align: right; outline: none; }
+  .field input:focus { border-color: #1677ff; box-shadow: 0 0 0 3px rgba(22,119,255,.12); }
+  .mode { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .mode p { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .mode button { padding: 10px 16px; border: none; border-radius: 10px; background: #1677ff; color: #fff; font-size: 14px; cursor: pointer; }
+  .mode button:hover { background: #0b5bd3; }
+  .deduct { font-size: 16px; line-height: 2; text-align: center; }
+  .deduct small { font-size: 12px; color: #94a3b8; }
+  .verdict { background: linear-gradient(135deg, #eef5ff, #f8fbff); border-radius: 14px; padding: 24px 20px; text-align: center; font-size: 17px; line-height: 2.1; font-weight: 600; }
+  .num { color: #1677ff; font-size: 26px; font-weight: 700; }
+  .pos { color: #e5484d; }
+  .neg { color: #12a150; }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px; }
+  .stat { background: #f7f9fc; border-radius: 10px; padding: 12px; }
+  .stat span { display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; }
+  .stat b { font-size: 16px; color: #1f2d3d; }
+  #chart { height: 380px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 8px 6px; border-bottom: 1px solid #eef2f7; text-align: left; }
+  th { color: #64748b; font-weight: 500; font-size: 13px; }
+  td:last-child, th:last-child { text-align: right; }
+  .sub { font-size: 14px; color: #334155; margin: 14px 0 8px; }
+  .scroll { overflow-x: auto; }
+  .yt { font-size: 12px; min-width: 100%; }
+  .yt th, .yt td { white-space: nowrap; text-align: right; padding: 6px; }
+  .yt th { font-weight: 500; color: #64748b; }
+  .note { font-size: 12px; color: #94a3b8; margin-top: 8px; }
+  footer { max-width: 1200px; margin: 0 auto 30px; padding: 0 16px; }
+  footer .card { font-size: 13px; color: #64748b; line-height: 1.9; }
+  footer p + p { margin-top: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>买房 VS 租房 对比计算器</h1>
+  <p>同一个人的两种选择，比较第 N 年末手上的现金</p>
+</header>
+
+<nav class="nav">
+  <a href="index.html" class="on">① 未购房：买房 vs 租房</a>
+  <a href="sell-vs-hold.html">② 已购房：卖房 vs 留房</a>
+</nav>
+
+<div class="wrap">
+  <aside>
+    <div class="card">
+      <h2>房产参数</h2>
+      <div class="field"><label>当前房屋总价（万元）</label><input id="price" type="number" step="1"></div>
+      <div class="field"><label>第 N 年末房价（万元）</label><input id="futurePrice" type="number" step="1"></div>
+      <div class="field"><label>首付比例（%）</label><input id="downRatio" type="number" step="1"></div>
+      <div class="field"><label>购房税费比例（%，契税、印花税等）</label><input id="taxRate" type="number" step="0.1"></div>
+      <div class="field"><label>房贷年利率（%）</label><input id="rate" type="number" step="0.01"></div>
+      <div class="field"><label>贷款年限（年）</label><input id="loanYears" type="number" step="1"></div>
+      <div class="field"><label>装修费（万元，无利息）</label><input id="decor" type="number" step="0.5"></div>
+      <div class="field"><label>装修费还款年限（年）</label><input id="decorYears" type="number" step="1"></div>
+      <div class="field"><label>装修期间临时租房（月）</label><input id="tempMonths" type="number" step="1"></div>
+      <div class="field"><label>翻新费（万元）</label><input id="renov" type="number" step="0.5"></div>
+      <div class="field"><label>翻新发生在购房后第几年末</label><input id="renovYear" type="number" step="1"></div>
+      <div class="field"><label>每月物业费（元）</label><input id="pmFee" type="number" step="10"></div>
+      <div class="field"><label>每月水电燃气取暖（元）</label><input id="utilities" type="number" step="10"></div>
+    </div>
+    <div class="card">
+      <h2>个人与理财参数</h2>
+      <div class="field"><label>对比周期 N（年）</label><input id="horizon" type="number" step="1"></div>
+      <div class="field"><label>个人月收入（元）</label><input id="income" type="number" step="500"></div>
+      <div class="field"><label>每月其他生活开销（元）</label><input id="living" type="number" step="100"></div>
+      <div class="field"><label>同地段月租金（元）</label><input id="rent" type="number" step="100"></div>
+      <div class="field"><label>存款年化利率（%）</label><input id="invRate" type="number" step="0.1"></div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="card mode">
+      <div>
+        <h2>买房者期末方式</h2>
+        <p id="modeText"></p>
+      </div>
+      <button id="modeBtn" type="button"></button>
+    </div>
+    <div class="card deduct">
+      <h2>买房者期末扣款</h2>
+      <div id="deduct"></div>
+    </div>
+    <div class="card">
+      <div class="verdict" id="verdict"></div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="card">
+      <h2>手上现金走势（按年）</h2>
+      <div id="chart"></div>
+    </div>
+    <div class="card">
+      <h2>期末成本拆解</h2>
+      <table>
+        <thead><tr><th>买房路线</th><th>金额（万元）</th></tr></thead>
+        <tbody id="buyTable"></tbody>
+      </table>
+      <table style="margin-top:14px">
+        <thead><tr><th>租房路线</th><th>金额（万元）</th></tr></thead>
+        <tbody id="rentTable"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>每年收支明细（单位：元）</h2>
+      <h3 class="sub">买房者</h3>
+      <div class="scroll"><table class="yt" id="yearB"></table></div>
+      <h3 class="sub">租房者</h3>
+      <div class="scroll"><table class="yt" id="yearR"></table></div>
+      <p class="note">年末现金不含房屋变现、期末剩余贷款和期末扣款（见上方扣款框）。</p>
+      <p class="note">存款利息按"存款年化利率"（默认 1.3%）按月复利计算，仅对正余额生效；若现金流为负形成负债，负债不计息也不复利。</p>
+    </div>
+  </main>
+</div>
+
+<footer>
+  <div class="card">
+    <p>提示：两人都从零开始攒钱。买房者攒够"首付 + 购房税费"后购房，购房前与租房者生活支出相同。</p>
+    <p>提示：装修费无利息，按装修费还款年限等额按月偿还。现金不足时形成的负债同样不计利息，结果仅供参考。</p>
+    <p>提示：卖房时的交易成本（税费、中介费等）未计入计算，实际卖房时可能需要另行考虑。</p>
+  </div>
+</footer>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  const DEFAULTS = {
+    price: 100, futurePrice: 70, downRatio: 30, taxRate: 1.5, rate: 3, loanYears: 30,
+    decor: 15, decorYears: 30, tempMonths: 3, renov: 10, renovYear: 30, pmFee: 200, utilities: 300,
+    horizon: 30, income: 6000, living: 2000, rent: 2400, invRate: 1.3
+  };
+
+  const LIMITS = {
+    price: [1, 1e4], futurePrice: [0, 1e4], downRatio: [0, 100], taxRate: [0, 10], rate: [0, 30],
+    loanYears: [1, 50], decor: [0, 1e4], decorYears: [1, 50], tempMonths: [0, 36],
+    renov: [0, 1e4], renovYear: [1, 100], pmFee: [0, 1e5], utilities: [0, 1e5],
+    horizon: [1, 50], income: [0, 1e7], living: [0, 1e6], rent: [0, 1e6], invRate: [-10, 30]
+  };
+
+  const chart = typeof echarts !== 'undefined' ? echarts.init($('chart')) : null;
+
+  let keepHouse = false;
+
+  const w = y => (y / 1e4).toLocaleString('zh-CN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const yuan = v => Math.round(v).toLocaleString('zh-CN');
+  const sum = (arr, k) => arr.reduce((s, r) => s + r[k], 0);
+
+  function readInputs() {
+    const p = {};
+    for (const k in DEFAULTS) {
+      let v = parseFloat($(k).value);
+      if (!isFinite(v)) v = DEFAULTS[k];
+      const [lo, hi] = LIMITS[k];
+      p[k] = Math.min(hi, Math.max(lo, v));
+    }
+    p.loanYears = Math.round(p.loanYears);
+    p.decorYears = Math.round(p.decorYears);
+    p.tempMonths = Math.round(p.tempMonths);
+    p.renovYear = Math.round(p.renovYear);
+    p.horizon = Math.round(p.horizon);
+    return p;
+  }
+
+  function applyFlow(s, d, f) {
+    if (f >= 0) {
+      const repay = Math.min(d, f);
+      return [s + f - repay, d - repay];
+    }
+    const take = Math.min(s, -f);
+    return [s - take, d + (-f - take)];
+  }
+
+  function calc(p) {
+    const P0 = p.price * 1e4, F = p.futurePrice * 1e4;
+    const down = P0 * p.downRatio / 100, loan = P0 - down;
+    const taxes = P0 * p.taxRate / 100;
+    const threshold = down + taxes;
+    const decor = p.decor * 1e4, renov = p.renov * 1e4;
+    const r = p.rate / 100 / 12, i = p.invRate / 100 / 12;
+    const loanN = p.loanYears * 12, N = p.horizon * 12;
+    const decorN = p.decorYears * 12, decorPay = decor / decorN;
+    const tempN = p.tempMonths, renovK = p.renovYear * 12;
+
+    const pay = loan <= 0 ? 0
+      : r === 0 ? loan / loanN
+      : loan * r * Math.pow(1 + r, loanN) / (Math.pow(1 + r, loanN) - 1);
+
+    const zeroB = () => ({ rent: 0, income: 0, mortgage: 0, decor: 0, renov: 0, pm: 0, util: 0, living: 0, temp: 0, interest: 0 });
+    const zeroR = () => ({ income: 0, rent: 0, util: 0, living: 0, interest: 0 });
+    const yearlyB = [], yearlyR = [];
+    let aB = zeroB(), aR = zeroR();
+
+    const years = [0], buyer = [0], renter = [0];
+    let bal = loan, decorBal = decor, sb = 0, debtB = 0, sr = 0, debtR = 0;
+    let bought = false, buyMonth = 0, renovDone = false;
+
+    for (let m = 1; m <= N; m++) {
+      aB.interest += sb * i;
+      aR.interest += sr * i;
+      sb *= 1 + i;
+      sr *= 1 + i;
+
+      const flowR = p.income - p.rent - p.utilities - p.living;
+      [sr, debtR] = applyFlow(sr, debtR, flowR);
+      aR.income += p.income;
+      aR.rent += p.rent;
+      aR.util += p.utilities;
+      aR.living += p.living;
+
+      if (!bought) {
+        [sb, debtB] = applyFlow(sb, debtB, p.income - p.rent - p.utilities - p.living);
+        aB.income += p.income;
+        aB.rent += p.rent;
+        aB.util += p.utilities;
+        aB.living += p.living;
+        if (debtB === 0 && sb >= threshold) {
+          sb -= threshold;
+          bought = true;
+          buyMonth = m;
+        }
+      } else {
+        const k = m - buyMonth;
+        const paying = k <= loanN;
+        const decorPaying = k <= decorN;
+        const temp = k <= tempN;
+        const renovNow = k === renovK;
+        if (paying) bal = Math.max(0, bal * (1 + r) - pay);
+        if (decorPaying) decorBal = Math.max(0, decorBal - decorPay);
+        if (renovNow) renovDone = true;
+        [sb, debtB] = applyFlow(sb, debtB,
+          p.income - (paying ? pay : 0) - (decorPaying ? decorPay : 0) - (renovNow ? renov : 0)
+          - p.pmFee - p.utilities - p.living - (temp ? p.rent : 0));
+        aB.income += p.income;
+        aB.mortgage += paying ? pay : 0;
+        aB.decor += decorPaying ? decorPay : 0;
+        aB.renov += renovNow ? renov : 0;
+        aB.pm += p.pmFee;
+        aB.util += p.utilities;
+        aB.living += p.living;
+        aB.temp += temp ? p.rent : 0;
+      }
+
+      if (m % 12 === 0) {
+        const outB = aB.rent + aB.mortgage + aB.decor + aB.renov + aB.pm + aB.util + aB.living + aB.temp;
+        const outR = aR.rent + aR.util + aR.living;
+        yearlyB.push({ year: m / 12, ...aB, net: aB.income + aB.interest - outB, deposit: sb, debt: debtB, cash: sb - debtB });
+        yearlyR.push({ year: m / 12, ...aR, net: aR.income + aR.interest - outR, deposit: sr, debt: debtR, cash: sr - debtR });
+        aB = zeroB();
+        aR = zeroR();
+
+        years.push(m / 12);
+        const end = m === N;
+        const houseVal = p.keepHouse ? 0 : F;
+        buyer.push(sb - debtB + (end && bought ? houseVal - bal - decorBal : 0));
+        renter.push(sr - debtR);
+      }
+    }
+
+    const last = buyer.length - 1;
+    const diff = buyer[last] - renter[last];
+    let cross = null;
+    for (let k = 1; k < buyer.length; k++) {
+      if ((buyer[k - 1] - renter[k - 1] >= 0) !== (buyer[k] - renter[k] >= 0)) { cross = k; break; }
+    }
+
+    return {
+      years, buyer, renter, diff, cross, yearlyB, yearlyR,
+      bought, buyMonth, renovDone, threshold, down, taxes, decor, renov, pay,
+      decorLeft: bought ? decorBal : 0,
+      debtEnd: debtB,
+      remainLoan: bought ? bal : 0,
+      buyerNet: buyer[last],
+      renterNet: renter[last],
+      buyerSurplus: p.income - pay - p.pmFee - p.utilities - p.living - decorPay,
+      renterSurplus: p.income - p.rent - p.utilities - p.living,
+      preRent: sum(yearlyB, 'rent'),
+      tempTotal: sum(yearlyB, 'temp'),
+      payTotal: sum(yearlyB, 'mortgage'),
+      decorPaid: sum(yearlyB, 'decor'),
+      renovPaid: sum(yearlyB, 'renov'),
+      pmTotal: sum(yearlyB, 'pm'),
+      utilTotal: sum(yearlyB, 'util'),
+      livingTotal: sum(yearlyB, 'living'),
+      rentTotal: sum(yearlyR, 'rent')
+    };
+  }
+
+  function render() {
+    const p = readInputs();
+    p.keepHouse = keepHouse;
+    const res = calc(p);
+    const up = res.diff >= 0;
+    const buyText = res.bought ? `约 ${(res.buyMonth / 12).toFixed(1)} 年后攒够首付购房` : '';
+
+    $('modeBtn').textContent = keepHouse ? '切换为：期末卖房' : '切换为：不卖房（自住到期末）';
+    $('modeText').textContent = keepHouse
+      ? `当前：不卖房，第 ${p.horizon} 年末保留房产，房产估值不计入现金，但仍需偿还剩余贷款。`
+      : `当前：期末卖房，房产卖出所得（扣除剩余贷款）计入现金。`;
+
+    if (!res.bought) {
+      $('deduct').innerHTML = `<small>买房者在对比周期内未攒够首付，未购房，无期末扣款。</small>`;
+      $('verdict').innerHTML =
+        `${p.horizon}年内买房者攒不够首付（需要 <span class="num">${w(res.threshold)}</span> 万元），未能购房。<br>` +
+        `买房者手上现金为 <span class="num">${w(res.buyerNet)}</span> 万元，` +
+        `租房者手上现金为 <span class="num">${w(res.renterNet)}</span> 万元。`;
+    } else {
+      $('deduct').innerHTML =
+        `期末未还清的装修费 <span class="num">${w(res.decorLeft)}</span> 万元<br>` +
+        `<small>` +
+        (res.renovDone
+          ? `翻新费 ${w(res.renov)} 万元于购房后第 ${p.renovYear} 年末支出，已计入现金流；`
+          : `翻新未在购房后的对比周期内发生，未计入；`) +
+        `装修费无利息</small>`;
+      $('verdict').innerHTML =
+        `${p.horizon}年后，买房者手上现金为 <span class="num">${w(res.buyerNet)}</span> 万元，` +
+        `租房者手上现金为 <span class="num">${w(res.renterNet)}</span> 万元。<br>` +
+        `买房比租房<span class="${up ? 'pos' : 'neg'}">${up ? '多' : '少'}</span>赚 ` +
+        `<span class="num">${w(Math.abs(res.diff))}</span> 万元。<br>` +
+        `<span style="font-size:13px;color:#64748b">${buyText}</span>` +
+        (keepHouse ? `<br><span style="font-size:13px;color:#64748b">不卖房：房产估值 ${w(p.futurePrice * 1e4)} 万元未计入现金</span>` : '');
+    }
+
+    const stats = [
+      ['每月月供（购房后）', `${yuan(res.pay)} 元`],
+      ['购房所需（首付+税费）', `${w(res.threshold)} 万元`],
+      ['买房时间', res.bought ? `约 ${(res.buyMonth / 12).toFixed(1)} 年后` : '未购房'],
+      ['购房后每月结余', `${yuan(res.buyerSurplus)} 元`],
+      ['租房每月结余', `${yuan(res.renterSurplus)} 元`],
+      ['买房/租房交叉点', res.cross ? `第 ${res.cross} 年` : '无交叉']
+    ];
+    $('stats').innerHTML = stats.map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
+
+    const buyRows = [
+      ['首付', res.bought ? res.down : 0],
+      ['购房税费（契税、印花税等）', res.bought ? res.taxes : 0],
+      ['购房前租金合计', res.preRent],
+      ['临时租房合计', res.tempTotal],
+      ['月供合计', res.payTotal],
+      ['装修费（无利息，分期还款）', res.decorPaid],
+      ['物业费合计', res.pmTotal],
+      ['水电燃气取暖合计', res.utilTotal],
+      ['生活开销合计', res.livingTotal],
+      [`翻新费（购房后第 ${p.renovYear} 年末）`, res.renovPaid],
+      ['期末未还清的装修费', res.decorLeft],
+      ['期末负债（现金不足时产生）', res.debtEnd],
+      ['期末剩余贷款', res.remainLoan]
+    ];
+    $('buyTable').innerHTML = buyRows.map(([k, v]) => `<tr><td>${k}</td><td>${w(v)}</td></tr>`).join('');
+
+    const rentRows = [
+      ['租金合计', res.rentTotal],
+      ['水电燃气取暖合计', res.utilTotal],
+      ['生活开销合计', res.livingTotal]
+    ];
+    $('rentTable').innerHTML = rentRows.map(([k, v]) => `<tr><td>${k}</td><td>${w(v)}</td></tr>`).join('');
+
+    const hB = ['年', '收入', '租金（购房前）', '月供', '装修分期', '翻新', '物业费', '水电燃气取暖', '生活开销', '临时租房', '存款利息', '年度结余', '年末存款', '年末负债', '年末现金'];
+    const hR = ['年', '收入', '租金', '水电燃气取暖', '生活开销', '存款利息', '年度结余', '年末存款', '年末负债', '年末现金'];
+    $('yearB').innerHTML = `<thead><tr>${hB.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>` +
+      res.yearlyB.map(r => `<tr><td>${r.year}</td><td>${yuan(r.income)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.mortgage)}</td><td>${yuan(r.decor)}</td><td>${yuan(r.renov)}</td><td>${yuan(r.pm)}</td><td>${yuan(r.util)}</td><td>${yuan(r.living)}</td><td>${yuan(r.temp)}</td><td>${yuan(r.interest)}</td><td>${yuan(r.net)}</td><td>${yuan(r.deposit)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.cash)}</td></tr>`).join('') +
+      '</tbody>';
+    $('yearR').innerHTML = `<thead><tr>${hR.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>` +
+      res.yearlyR.map(r => `<tr><td>${r.year}</td><td>${yuan(r.income)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.util)}</td><td>${yuan(r.living)}</td><td>${yuan(r.interest)}</td><td>${yuan(r.net)}</td><td>${yuan(r.deposit)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.cash)}</td></tr>`).join('') +
+      '</tbody>';
+
+    if (!chart) return;
+    chart.setOption({
+      tooltip: { trigger: 'axis', valueFormatter: v => w(v) + ' 万' },
+      legend: { top: 0, data: ['买房者手上现金', '租房者手上现金'] },
+      grid: { left: 60, right: 24, top: 48, bottom: 36 },
+      xAxis: { type: 'category', data: res.years.map(y => y + '年'), boundaryGap: false },
+      yAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e4).toFixed(0) + '万' } },
+      series: [
+        {
+          name: '买房者手上现金', type: 'line', smooth: true, data: res.buyer, color: '#1677ff',
+          ...(res.cross ? { markPoint: { data: [{ coord: [res.cross, res.buyer[res.cross]], value: '交叉' }] } } : {})
+        },
+        { name: '租房者手上现金', type: 'line', smooth: true, data: res.renter, color: '#fa8c16' }
+      ]
+    }, true);
+  }
+
+  Object.keys(DEFAULTS).forEach(k => {
+    $(k).value = DEFAULTS[k];
+    $(k).addEventListener('input', render);
+  });
+  $('modeBtn').addEventListener('click', () => {
+    keepHouse = !keepHouse;
+    render();
+  });
+  window.addEventListener('resize', () => chart && chart.resize());
+  render();
+</script>
+</body>
+</html>

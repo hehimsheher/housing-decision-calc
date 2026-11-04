@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卖房 vs 留房 决策计算器</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f0f4fa; color: #1f2d3d; }
+  header { background: linear-gradient(135deg, #7a3ff2, #5a24c8); color: #fff; text-align: center; padding: 26px 16px; }
+  header h1 { font-size: 25px; letter-spacing: 2px; }
+  header p { font-size: 13px; opacity: .85; margin-top: 6px; }
+  .nav { display: flex; gap: 8px; justify-content: center; background: #fff; padding: 10px 16px; border-bottom: 1px solid #e5e9f0; flex-wrap: wrap; }
+  .nav a { padding: 8px 16px; border-radius: 20px; font-size: 14px; color: #475569; text-decoration: none; }
+  .nav a:hover { background: #f0f4fa; }
+  .nav a.on { background: #7a3ff2; color: #fff; }
+  .wrap { max-width: 1280px; margin: 20px auto; padding: 0 16px; display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; }
+  .wrap > * { min-width: 0; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+  .card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,.05); }
+  .card + .card { margin-top: 20px; }
+  h2 { font-size: 16px; color: #334155; margin-bottom: 12px; }
+  .field { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #e5e9f0; }
+  .field:last-child { border-bottom: none; }
+  .field label { font-size: 13px; color: #475569; }
+  .field input { width: 132px; padding: 7px 8px; border: 1px solid #d6dde8; border-radius: 8px; font-size: 14px; text-align: right; outline: none; }
+  .field input:focus { border-color: #7a3ff2; box-shadow: 0 0 0 3px rgba(122,63,242,.12); }
+  .fixed { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e5e9f0; }
+  .fixed span { font-size: 13px; color: #475569; }
+  .fixed b { font-size: 14px; color: #7a3ff2; }
+  .verdict { background: linear-gradient(135deg, #f5f0ff, #fbf9ff); border-radius: 14px; padding: 22px 18px; text-align: center; font-size: 17px; line-height: 2; font-weight: 600; }
+  .num { color: #7a3ff2; font-size: 25px; font-weight: 700; }
+  .pos { color: #e5484d; }
+  .neg { color: #12a150; }
+  .paths { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  .mt { width: 100%; margin-top: 18px; border-collapse: collapse; font-size: 13px; }
+  .mt th, .mt td { padding: 7px 8px; border-bottom: 1px solid #eef2f7; text-align: right; }
+  .mt th { color: #64748b; font-weight: 500; }
+  .mt th:first-child, .mt td:first-child { text-align: left; }
+  .mt tr.sum td { font-weight: 700; border-top: 1px solid #dbe3ee; border-bottom: none; background: #f7f9fc; }
+  .mt tr.sum td.pos { color: #e5484d; }
+  .mt tr.sum td.neg { color: #12a150; }
+  .mt caption { caption-side: top; text-align: left; font-size: 13px; color: #475569; padding-bottom: 8px; font-weight: 600; }
+  .mt .dash { color: #cbd5e1; }
+  @media (max-width: 700px) { .paths { grid-template-columns: 1fr; } }
+  .pcard { border-radius: 12px; padding: 14px; color: #fff; }
+  .pcard h3 { font-size: 14px; font-weight: 600; opacity: .9; }
+  .pcard b { display: block; font-size: 24px; margin: 6px 0 4px; }
+  .pcard small { font-size: 12px; opacity: .9; line-height: 1.8; display: block; }
+  .pa { background: linear-gradient(135deg, #1677ff, #0b5bd3); }
+  .pb { background: linear-gradient(135deg, #fa8c16, #d46b08); }
+  .pc { background: linear-gradient(135deg, #12a150, #0a8f43); }
+  #chart { height: 380px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 8px 6px; border-bottom: 1px solid #eef2f7; text-align: left; }
+  th { color: #64748b; font-weight: 500; font-size: 13px; }
+  td:last-child, th:last-child { text-align: right; }
+  .sub { font-size: 14px; color: #334155; margin: 14px 0 8px; }
+  .scroll { overflow-x: auto; }
+  .yt { font-size: 12px; }
+  .yt th, .yt td { white-space: nowrap; text-align: right; padding: 5px 6px; }
+  .yt th { font-weight: 500; color: #64748b; }
+  .note { font-size: 12px; color: #94a3b8; margin-top: 8px; line-height: 1.8; }
+  .warn { background: #fff7e6; border: 1px solid #ffe0a3; color: #8a5a00; border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.8; margin-bottom: 14px; }
+  .remind { list-style: none; }
+  .remind li { font-size: 13px; color: #475569; line-height: 1.9; padding: 7px 0 7px 14px; border-left: 3px solid #ffd591; margin-bottom: 8px; background: #fffbf5; border-radius: 0 8px 8px 0; }
+  .remind li b { color: #8a5a00; }
+  footer { max-width: 1280px; margin: 0 auto 30px; padding: 0 16px; }
+  footer .card { font-size: 13px; color: #64748b; line-height: 1.9; }
+  footer p + p { margin-top: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>卖房 vs 留房 决策计算器</h1>
+  <p>已有房主：卖掉换现金，还是留着继续还贷 —— 比较 60 年后的手上现金</p>
+</header>
+
+<nav class="nav">
+  <a href="index.html">① 未购房：买房 vs 租房</a>
+  <a href="sell-vs-hold.html" class="on">② 已购房：卖房 vs 留房</a>
+</nav>
+
+<div class="wrap">
+  <aside>
+    <div class="card">
+      <h2>房产与贷款现状</h2>
+      <div class="field"><label>当前房屋市值（万元）</label><input id="value" type="number" step="1"></div>
+      <div class="field"><label>原始购房总价（万元）</label><input id="origPrice" type="number" step="1"></div>
+      <div class="field"><label>原始首付比例（%）</label><input id="downRatio" type="number" step="1"></div>
+      <div class="field"><label>房贷年利率（%）</label><input id="rate" type="number" step="0.01"></div>
+      <div class="field">
+        <label>还款方式</label>
+        <select id="payMethod">
+          <option value="acpi">等额本息（最常见）</option>
+          <option value="acp">等额本金</option>
+        </select>
+      </div>
+      <div class="field"><label>已还贷款年限（年）</label><input id="loanPaidYears" type="number" step="1"></div>
+      <div class="field"><label>剩余贷款期限（年）</label><input id="loanYearsLeft" type="number" step="1"></div>
+      <div class="field"><label>每月物业费（元）</label><input id="pmFee" type="number" step="10"></div>
+    </div>
+
+    <div class="card">
+      <h2>卖出侧</h2>
+      <div class="field"><label>增值税（%）</label><input id="vat" type="number" step="0.1"></div>
+      <div class="field"><label>个税（%）</label><input id="incomeTax" type="number" step="0.1"></div>
+      <div class="field"><label>中介费（%）</label><input id="agency" type="number" step="0.1"></div>
+      <div class="field"><label>卖出后自住月租金（元）</label><input id="rentAfter" type="number" step="100"></div>
+      <div class="field"><label>押金月数</label><input id="depositMonths" type="number" step="1"></div>
+      <div class="field"><label>搬家过渡成本（元）</label><input id="moveCost" type="number" step="100"></div>
+    </div>
+
+    <div class="card">
+      <h2>共同项</h2>
+      <div class="fixed"><span>对比周期</span><b>60 年（固定）</b></div>
+      <div class="field"><label>个人月收入（元）</label><input id="income" type="number" step="500"></div>
+      <div class="field"><label>退休时间（第几年起）</label><input id="retireYears" type="number" step="1"></div>
+      <div class="field"><label>每月退休工资（元）</label><input id="pension" type="number" step="100"></div>
+      <div class="field"><label>每月其他生活开销（元）</label><input id="living" type="number" step="100"></div>
+      <div class="field"><label>每月水电燃气取暖（元）</label><input id="utilities" type="number" step="10"></div>
+      <div class="field"><label>存款年化利率（%）</label><input id="invRate" type="number" step="0.1"></div>
+    </div>
+
+    <div class="card">
+      <h2>路径 C：留房出租</h2>
+      <div class="field"><label>出租月收入（元/月）</label><input id="rentOut" type="number" step="100"></div>
+      <div class="field"><label>出租空置率（%）</label><input id="vacancy" type="number" step="1"></div>
+      <div class="field"><label>自己另租的月租金（元）</label><input id="selfRentC" type="number" step="100"></div>
+      <p class="note">房子租出去后自己另租小房住。物业费与维修预留仍由你承担；出租收入按空置率打折。</p>
+    </div>
+  </aside>
+
+  <main>
+    <div id="warnBox"></div>
+
+    <div class="card">
+      <div class="verdict" id="verdict"></div>
+      <div id="monthlyBox"></div>
+      <div class="paths" id="pathCards"></div>
+    </div>
+
+    <div class="card">
+      <h2>未计入的因素（提醒）</h2>
+      <ul class="remind">
+        <li><b>房屋维修费用未计入</b>：中修、大修、电梯与外墙更新、管道更换等支出都没有算进来。留房路径的真实持有成本高于页面显示的数字。</li>
+        <li><b>未来翻新与装修费用未计入</b>：没有按年份预提翻新支出。房子住久了要重新装修，这笔钱在 60 年里不会少。</li>
+        <li><b>房屋使用寿命未考虑</b>：默认这套房子可以一直持有，没有考虑房龄折价、自然老化、拆迁或产权到期等变化。</li>
+        <li><b>房价不预测</b>：模型不设未来房价。留房路径的房产按当前市值作参考，60 年后值多少未知。</li>
+        <li><b>退休后的消费变化未计入</b>：退休后仍按现在的生活开销计算，没有考虑消费习惯改变、医疗养老支出增加，也没有社保养老金调整与通货膨胀。</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>手上现金走势（按年）</h2>
+      <div id="chart"></div>
+      <p class="note">手上现金 = 年末存款 − 透支欠款。房产与剩余贷款都不计入，因为三条路径期末都不卖房。</p>
+    </div>
+
+    <div class="card">
+      <h2>关键判断</h2>
+      <div id="judge"></div>
+    </div>
+
+    <div class="card">
+      <h2>期末成本拆解（万元）</h2>
+      <table>
+        <thead><tr><th>项目</th><th>A 卖出</th><th>B 留房自住</th><th>C 留房出租</th></tr></thead>
+        <tbody id="costTable"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>房贷还款计划（按年）</h2>
+      <div id="loanBox"></div>
+    </div>
+
+    <div class="card">
+      <h2>每年收支明细（单位：元）</h2>
+      <h3 class="sub">A 卖出后租房</h3>
+      <div class="scroll"><table class="yt" id="yearA"></table></div>
+      <h3 class="sub">B 留房自住</h3>
+      <div class="scroll"><table class="yt" id="yearB"></table></div>
+      <h3 class="sub">C 留房并出租</h3>
+      <div class="scroll"><table class="yt" id="yearC"></table></div>
+      <p class="note">年度结余 = 收入 + 出租收入 + 存款利息 − 各项支出。透支欠款不计利息，也不参与复利。</p>
+      <p class="note">存款利息按"存款年化利率"（默认 1.3%）按月复利计算，仅对正余额生效；若某条路径的每月现金流为负，存款会一直是 0，利息也就为 0——这不是算错，而是没有可复利的钱。</p>
+    </div>
+  </main>
+</div>
+
+<footer>
+  <div class="card">
+    <p>说明：这是"从今天起"的决策。已付的首付和已还的本金是沉没成本，不参与比较。</p>
+    <p>说明：对比期末三条路径都不卖房，指标是手上的现金。留房路径仍持有的房产与剩余贷款都不计入现金，仅在路径卡里作为参考显示。</p>
+    <p>说明：模型不预测未来房价。留房路径的房产按当前市值作参考，若按当前市值卖出能净剩多少会一并列出，但那是"假设现在就卖"，不是 60 年后的价值。</p>
+    <p>提醒：房屋维修费用、未来翻新与装修费用、房屋使用寿命与房龄折价都未计入计算，详见上方"未计入的因素"。</p>
+    <p>提示：卖房交易成本按增值税、个税、中介费分别估算，实际以当地政策为准。</p>
+  </div>
+</footer>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  const HORIZON = 60;
+
+  const DEFAULTS = {
+    value: 100, origPrice: 160, downRatio: 30, rate: 2.85, payMethod: 'acpi',
+    loanPaidYears: 4, loanYearsLeft: 26, pmFee: 200,
+    vat: 1.5, incomeTax: 0, agency: 1, rentAfter: 1200, depositMonths: 2, moveCost: 1000,
+    income: 8000, retireYears: 35, pension: 3000, living: 2000, utilities: 300, invRate: 1.3,
+    rentOut: 2500, vacancy: 10, selfRentC: 1200
+  };
+
+  const LIMITS = {
+    value: [1, 1e4], origPrice: [0, 1e4], downRatio: [0, 100],
+    rate: [0, 30], loanPaidYears: [0, 60], loanYearsLeft: [0, 60],
+    pmFee: [0, 1e5],
+    vat: [0, 20], incomeTax: [0, 20], agency: [0, 10], rentAfter: [0, 1e6],
+    depositMonths: [0, 12], moveCost: [0, 1e6],
+    income: [0, 1e7], retireYears: [0, 60], pension: [0, 1e6],
+    living: [0, 1e6], utilities: [0, 1e5], invRate: [-10, 30],
+    rentOut: [0, 1e6], vacancy: [0, 100], selfRentC: [0, 1e6]
+  };
+
+  const chart = typeof echarts !== 'undefined' ? echarts.init($('chart')) : null;
+
+  const w = v => (v / 1e4).toLocaleString('zh-CN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const yuan = v => Math.round(v).toLocaleString('zh-CN');
+  const PATHS = [
+    { key: 'A', name: 'A 卖出' },
+    { key: 'B', name: 'B 留房自住' },
+    { key: 'C', name: 'C 留房出租' }
+  ];
+
+  function readInputs() {
+    const p = { horizon: HORIZON };
+    for (const k in DEFAULTS) {
+      const el = $(k);
+      if (el.tagName === 'SELECT') { p[k] = el.value; continue; }
+      let v = parseFloat(el.value);
+      if (!isFinite(v)) v = DEFAULTS[k];
+      const lim = LIMITS[k];
+      p[k] = lim ? Math.min(lim[1], Math.max(lim[0], v)) : v;
+    }
+    ['loanPaidYears', 'loanYearsLeft', 'retireYears'].forEach(k => p[k] = Math.round(p[k]));
+
+    // 推算：原始首付 → 原始贷款 → 月供 → 剩余本金 → 已还本金
+    p.origDown = p.origPrice * p.downRatio / 100;
+    const r = p.rate / 100 / 12;
+    const origLoan = Math.max(0, p.origPrice - p.origDown) * 1e4;
+    const nTotal = (p.loanPaidYears + p.loanYearsLeft) * 12;
+    const k = p.loanPaidYears * 12;
+    let remain;
+    if (p.payMethod === 'acp') {
+      // 等额本金：每月还本固定 = 原始贷款 ÷ 总期数，剩余本金 = 原始贷款 × (1 − 已还期数 ÷ 总期数)
+      p.monthlyPrincipal = nTotal > 0 ? origLoan / nTotal : 0;
+      remain = nTotal > 0 ? origLoan * (1 - k / nTotal) : 0;
+      p.monthlyPay = p.monthlyPrincipal + origLoan * r;
+    } else {
+      // 等额本息：月供固定，余额按复利滚动
+      const M = payOf(origLoan, r, nTotal);
+      const grow = Math.pow(1 + r, k);
+      remain = origLoan <= 0 ? 0
+        : r === 0 ? origLoan - M * k
+        : Math.max(0, origLoan * grow - M * (grow - 1) / r);
+      p.monthlyPay = M;
+    }
+    p.origLoan = origLoan;
+    p.loanBal = Math.max(0, remain) / 1e4;
+    p.principalPaid = origLoan / 1e4 - p.loanBal;
+    return p;
+  }
+
+  function addCash(c, d, v) {
+    if (v >= 0) {
+      const repay = Math.min(d, v);
+      return [c + v - repay, d - repay];
+    }
+    const take = Math.min(c, -v);
+    return [c - take, d + (-v - take)];
+  }
+
+  function payOf(bal, r, n) {
+    if (bal <= 0 || n <= 0) return 0;
+    return r === 0 ? bal / n : bal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+  }
+
+  function simulate(path, p) {
+    const N = p.horizon * 12;
+    const r = p.rate / 100 / 12, i = p.invRate / 100 / 12;
+    const P0 = p.value * 1e4;
+    const loan0 = p.loanBal * 1e4;
+    const rent = p.rentAfter;
+    const deposit = (path === 'C' ? p.selfRentC : rent) * p.depositMonths;
+    const rentIn = p.rentOut * (1 - p.vacancy / 100);
+    const retireM = p.retireYears * 12;
+
+    let cash = 0, debt = 0, loanBal = 0, pay = 0, loanN = 0, owned = false;
+    let saleNet = 0;
+
+    if (path === 'A') {
+      const fee = P0 * (p.vat + p.incomeTax + p.agency) / 100;
+      saleNet = P0 - fee - loan0;
+      [cash, debt] = addCash(cash, debt, saleNet);
+    } else {
+      owned = true;
+      loanBal = loan0; loanN = p.loanYearsLeft * 12;
+      pay = payOf(loanBal, r, loanN);
+    }
+    const yearly = [];
+    const acc = { income: 0, rentOut: 0, rent: 0, mortgage: 0, pm: 0, util: 0, living: 0, other: 0, interest: 0 };
+
+    for (let m = 1; m <= N; m++) {
+      acc.interest += cash * i;
+      cash *= 1 + i;
+
+      let flow = 0;
+      const incomeNow = m > retireM ? p.pension : p.income;
+      if (path === 'A') {
+        flow = incomeNow - rent - p.utilities - p.living;
+        acc.rent += rent;
+        if (m === 1) { flow -= p.moveCost + deposit; acc.other += p.moveCost + deposit; }
+      } else if (path === 'B') {
+        const paying = m <= loanN;
+        const payNow = p.payMethod === 'acp' ? p.monthlyPrincipal + loanBal * r : pay;
+        if (paying) { loanBal = Math.max(0, loanBal * (1 + r) - payNow); acc.mortgage += payNow; }
+        flow = incomeNow - (paying ? payNow : 0) - p.pmFee - p.utilities - p.living;
+        acc.pm += p.pmFee;
+      } else {
+        const paying = m <= loanN;
+        const payNow = p.payMethod === 'acp' ? p.monthlyPrincipal + loanBal * r : pay;
+        if (paying) { loanBal = Math.max(0, loanBal * (1 + r) - payNow); acc.mortgage += payNow; }
+        flow = incomeNow + rentIn - (paying ? payNow : 0) - p.pmFee - p.selfRentC - p.utilities - p.living;
+        acc.pm += p.pmFee; acc.rentOut += rentIn; acc.rent += p.selfRentC;
+        if (m === 1) { flow -= deposit; acc.other += deposit; }
+      }
+
+      acc.income += incomeNow; acc.util += p.utilities; acc.living += p.living;
+
+      [cash, debt] = addCash(cash, debt, flow);
+
+      if (m === N) {
+        if (path === 'A') { cash += deposit; acc.other -= deposit; }
+        if (path === 'C') { cash += deposit; acc.other -= deposit; }
+      }
+
+      if (m % 12 === 0) {
+        const out = acc.rent + acc.mortgage + acc.pm + acc.util + acc.living + acc.other;
+        const net = acc.income + acc.rentOut + acc.interest - out;
+        yearly.push({
+          year: m / 12, ...acc, out, net,
+          deposit: cash, debt, loan: owned ? loanBal : 0,
+          cash: cash - debt
+        });
+        Object.keys(acc).forEach(k => acc[k] = 0);
+      }
+    }
+
+    return {
+      path, yearly, deposit: cash, debt, cash: cash - debt, loan: owned ? loanBal : 0, owned, saleNet,
+      totals: {
+        rent: sum(yearly, 'rent'), rentOut: sum(yearly, 'rentOut'), mortgage: sum(yearly, 'mortgage'),
+        pm: sum(yearly, 'pm'), util: sum(yearly, 'util'),
+        living: sum(yearly, 'living'), other: sum(yearly, 'other'),
+        interest: sum(yearly, 'interest')
+      }
+    };
+  }
+
+  function sum(arr, k) { return arr.reduce((s, r) => s + r[k], 0); }
+
+  function loanSummary(p) {
+    const r = p.rate / 100 / 12;
+    const n = p.loanYearsLeft * 12;
+    const M = payOf(p.loanBal * 1e4, r, n);
+    const acp = p.payMethod === 'acp';
+    let bal = p.loanBal * 1e4, interest = 0, principal = 0, firstInterest = 0, firstPayment = 0;
+    const rows = [];
+    let yearInt = 0, yearPrin = 0, yearPay = 0, yearOpen = bal;
+    for (let m = 1; m <= n && bal > 0.5; m++) {
+      const it = bal * r;
+      const payNow = acp ? p.monthlyPrincipal + bal * r : M;
+      const pr = Math.min(bal, payNow - it);
+      if (m === 1) { firstInterest = it; firstPayment = payNow; }
+      interest += it; principal += pr;
+      yearInt += it; yearPrin += pr; yearPay += payNow;
+      bal = Math.max(0, bal - pr);
+      if (m % 12 === 0 || bal <= 0.5) {
+        rows.push({ year: Math.ceil(m / 12), open: yearOpen, pay: yearPay, interest: yearInt, principal: yearPrin, close: bal });
+        yearInt = 0; yearPrin = 0; yearPay = 0; yearOpen = bal;
+      }
+    }
+    return { M, acp, firstInterest, firstPayment, firstPrincipal: firstPayment - firstInterest, interest, principal, rows };
+  }
+
+  function calc(p) {
+    const A = simulate('A', p), B = simulate('B', p), C = simulate('C', p);
+    return {
+      A, B, C,
+      crossAB: crossYear(A.yearly, B.yearly),
+      crossAC: crossYear(A.yearly, C.yearly),
+      critRent: critRent(p)
+    };
+  }
+
+  function crossYear(a, b) {
+    for (let k = 1; k < a.length; k++) {
+      if ((a[k - 1].cash - b[k - 1].cash >= 0) !== (a[k].cash - b[k].cash >= 0)) return k;
+    }
+    return null;
+  }
+
+  function critRent(p) {
+    const B = simulate('B', p);
+    const test = rent => simulate('A', { ...p, rentAfter: rent }).cash - B.cash;
+    let lo = 0, hi = 30000;
+    if (test(lo) < 0) return null;
+    if (test(hi) > 0) return null;
+    for (let i = 0; i < 34; i++) {
+      const mid = (lo + hi) / 2;
+      if (test(mid) > 0) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
+  function render() {
+    const p = readInputs();
+    const res = calc(p);
+
+    const invests = p.origDown * 1e4 + p.principalPaid * 1e4;
+    const equity = p.value * 1e4 - p.loanBal * 1e4;
+    const loss = invests - equity;
+    const nowSellNet = p.value * 1e4 * (1 - (p.vat + p.incomeTax + p.agency) / 100) - p.loanBal * 1e4;
+
+    let warn = '';
+    if (p.value * 1e4 < p.loanBal * 1e4) warn += `房屋市值 ${w(p.value * 1e4)} 万元低于剩余贷款 ${w(p.loanBal * 1e4)} 万元，当前是负资产，卖掉也还不清贷款。<br>`;
+    if (p.loanYearsLeft > p.horizon) warn += `贷款还有 ${p.loanYearsLeft} 年，比对比周期 ${p.horizon} 年还长。`;
+    $('warnBox').innerHTML = warn ? `<div class="warn">${warn}</div>` : '';
+
+    const best = PATHS.reduce((a, b) => res[a.key].cash >= res[b.key].cash ? a : b);
+    const worst = PATHS.reduce((a, b) => res[a.key].cash <= res[b.key].cash ? a : b);
+    const gap = res[best.key].cash - res[worst.key].cash;
+
+    const loan = loanSummary(p);
+    const rentIn = p.rentOut * (1 - p.vacancy / 100);
+    const monthly = [
+      ['月收入', p.income, p.income, p.income],
+      ['租金', -p.rentAfter, 0, -p.selfRentC],
+      ['出租收入', 0, 0, rentIn],
+      ['房贷月供', 0, -loan.firstPayment, -loan.firstPayment],
+      ['物业费', 0, -p.pmFee, -p.pmFee],
+      ['水电燃气取暖', -p.utilities, -p.utilities, -p.utilities],
+      ['生活开销', -p.living, -p.living, -p.living]
+    ];
+    const sums = { A: 0, B: 0, C: 0 };
+    monthly.forEach(r => { sums.A += r[1]; sums.B += r[2]; sums.C += r[3]; });
+    const after = {
+      A: p.income - p.rentAfter - p.utilities - p.living,
+      B: p.income - p.pmFee - p.utilities - p.living,
+      C: p.income + rentIn - p.pmFee - p.selfRentC - p.utilities - p.living
+    };
+    const retired = {
+      A: p.pension - p.rentAfter - p.utilities - p.living,
+      B: p.pension - p.pmFee - p.utilities - p.living,
+      C: p.pension + rentIn - p.pmFee - p.selfRentC - p.utilities - p.living
+    };
+    const retiredWithLoan = {
+      A: retired.A,
+      B: p.pension - loan.firstPayment - p.pmFee - p.utilities - p.living,
+      C: p.pension + rentIn - loan.firstPayment - p.pmFee - p.selfRentC - p.utilities - p.living
+    };
+    const retireBeforeLoan = p.retireYears < p.loanYearsLeft;
+    const cell = v => v === 0 ? '<span class="dash">—</span>' : yuan(v);
+    const sign = v => v >= 0 ? 'pos' : 'neg';
+
+    const methodName = loan.acp ? '等额本金' : '等额本息';
+    const formula = loan.acp
+      ? '每月还本固定 = 贷款本金 ÷ 还款月数；每月利息 = 当期剩余本金 × 月利率；<br>月供 = 每月还本 + 当期利息，逐月递减。'
+      : '月供 = 贷款本金 × 月利率 × (1+月利率)<sup>还款月数</sup> ÷ [(1+月利率)<sup>还款月数</sup> − 1]，<br>其中 月利率 = 年利率 ÷ 12，还款月数 = 贷款年限 × 12。月供固定不变，利息占比逐月下降。';
+    $('loanBox').innerHTML =
+      `<p class="note" style="font-size:13px;color:#475569;line-height:1.9;margin-bottom:10px"><b>还款方式：${methodName}</b><br>${formula}</p>` +
+      `<table class="mt"><thead><tr><th>年</th><th>期初剩余本金</th><th>当年月供合计</th><th>其中利息</th><th>其中本金</th><th>期末剩余本金</th></tr></thead><tbody>` +
+      loan.rows.map(r => `<tr><td>${r.year}</td><td>${yuan(r.open)}</td><td>${yuan(r.pay)}</td><td>${yuan(r.interest)}</td><td>${yuan(r.principal)}</td><td>${yuan(r.close)}</td></tr>`).join('') +
+      `<tr class="sum"><td>合计</td><td>—</td><td>${yuan(loan.interest + loan.principal)}</td><td>${yuan(loan.interest)}</td><td>${yuan(loan.principal)}</td><td>${yuan(loan.rows.length ? loan.rows[loan.rows.length-1].close : 0)}</td></tr>` +
+      `</tbody></table>`;
+    $('monthlyBox').innerHTML =
+      `<table class="mt"><caption>每月收支（元）· 贷款还清前</caption><thead><tr><th>项目</th><th>A 卖出</th><th>B 留房自住</th><th>C 留房出租</th></tr></thead><tbody>` +
+      monthly.map(r => `<tr><td>${r[0]}</td><td>${cell(r[1])}</td><td>${cell(r[2])}</td><td>${cell(r[3])}</td></tr>`).join('') +
+      `<tr class="sum"><td>月结余</td><td class="${sign(sums.A)}">${yuan(sums.A)}</td><td class="${sign(sums.B)}">${yuan(sums.B)}</td><td class="${sign(sums.C)}">${yuan(sums.C)}</td></tr>` +
+      `</tbody></table>` +
+      `<p class="note">退休后（第 ${p.retireYears + 1} 年起）月收入降为退休工资 ${yuan(p.pension)} 元，不再有工作收入。<br>` +
+      `贷款还清后（第 ${p.loanYearsLeft + 1} 年起）月结余：A ${yuan(after.A)} 元｜B ${yuan(after.B)} 元｜C ${yuan(after.C)} 元。<br>` +
+      `退休后（贷款已还清）月结余：A ${yuan(retired.A)} 元｜B ${yuan(retired.B)} 元｜C ${yuan(retired.C)} 元。` +
+      (retireBeforeLoan
+        ? `<br><b>注意：退休时贷款还没还清</b>（第 ${p.loanYearsLeft + 1} 年才还清），退休后仍需还贷的月结余：A ${yuan(retiredWithLoan.A)} 元｜B ${yuan(retiredWithLoan.B)} 元｜C ${yuan(retiredWithLoan.C)} 元。`
+        : '') +
+      `<br>房贷月供${loan.acp ? '首月' : ''} ${yuan(loan.firstPayment)} 元中，利息 ${yuan(loan.firstInterest)} 元、本金 ${yuan(loan.firstPrincipal)} 元` +
+      `${loan.acp ? `（等额本金，月供逐月递减，末年月均 ${yuan(loan.rows.length ? loan.rows[loan.rows.length-1].pay / 12 : 0)} 元）` : ''}；` +
+      `${p.loanYearsLeft} 年累计还本 ${w(loan.principal)} 万元、付息 ${w(loan.interest)} 万元。</p>`;
+
+    $('verdict').innerHTML =
+      `${p.horizon}年后，卖房路径手上现金 <span class="num">${w(res.A.cash)}</span> 万元，` +
+      `留房自住 <span class="num">${w(res.B.cash)}</span> 万元，留房出租 <span class="num">${w(res.C.cash)}</span> 万元。<br>` +
+      `<span class="${gap >= 0 ? 'pos' : 'neg'}">${best.name}</span> 最优，比最差路径多 <span class="num">${w(gap)}</span> 万元。`;
+
+    $('pathCards').innerHTML = PATHS.map(pt => {
+      const r = res[pt.key];
+      const desc = pt.key === 'A' ? '卖出后租房生活，无房产'
+        : pt.key === 'B' ? '继续还贷自住' : '房子出租，自己另租小房住';
+      const house = pt.key === 'A' ? ''
+        : `<br>仍持有房产（当前市值 ${w(p.value * 1e4)} 万元，未计入现金）<br>剩余贷款 ${w(r.loan)} 万元｜现在卖出净剩 ${w(nowSellNet)} 万元`;
+      return `<div class="pcard ${pt.key.toLowerCase()}"><h3>${pt.name}</h3><b>${w(r.cash)} 万元</b><small>${desc}${house}<br>存款 ${w(r.deposit)} 万｜透支欠款 ${w(r.debt)} 万</small></div>`;
+    }).join('');
+
+    const jl = [
+      ['原始贷款总额', `${w(p.origLoan)} 万元（总价 ${w(p.origPrice * 1e4)} − 首付 ${w(p.origDown * 1e4)}）`],
+      ['原始首付（推算）', `${w(p.origDown * 1e4)} 万元（占原价 ${p.downRatio}%）`],
+      [loan.acp ? '首月房贷月供' : '每月房贷月供', `${yuan(loan.firstPayment)} 元`],
+      ['月供构成（首月）', `利息 ${yuan(loan.firstInterest)} 元 ＋ 本金 ${yuan(loan.firstPrincipal)} 元`],
+      [`${p.loanYearsLeft} 年累计`, `还本 ${w(loan.principal)} 万元 ＋ 付息 ${w(loan.interest)} 万元`],
+      ['已还本金（推算）', `${w(p.principalPaid * 1e4)} 万元`],
+      ['剩余贷款本金（推算）', `${w(p.loanBal * 1e4)} 万元`],
+      ['已投入（首付+已还本金）', `${w(invests)} 万元`],
+      ['当前净值（市值−剩余贷款）', `${w(equity)} 万元`],
+      ['账面浮亏', `${w(loss)} 万元（沉没成本，不参与比较）`],
+      ['现在卖房净回笼（扣成本与还贷）', `${w(nowSellNet)} 万元`],
+      ['留房路径每月结余', `${yuan(p.income - p.monthlyPay - p.pmFee - p.utilities - p.living)} 元`],
+      ['卖出路径每月结余', `${yuan(p.income - p.rentAfter - p.utilities - p.living)} 元`],
+      ['退休时间', `第 ${p.retireYears + 1} 年起，工作收入停止，改为每月退休工资 ${yuan(p.pension)} 元`],
+      ['A 与 B 交叉点', res.crossAB ? `第 ${res.crossAB} 年` : '无交叉'],
+      ['A 与 C 交叉点', res.crossAC ? `第 ${res.crossAC} 年` : '无交叉']
+    ];
+    if (res.critRent !== null) jl.push(['临界自住租金（卖出 vs 留房）', `${yuan(res.critRent)} 元/月`]);
+    else jl.push(['临界自住租金（卖出 vs 留房）', '无解（在合理租金区间内不会出现反转）']);
+    $('judge').innerHTML = '<table><tbody>' + jl.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('') + '</tbody></table>' +
+      `<p class="note">原始贷款 = 总价 − 首付；月供由（已还年限 + 剩余年限）与利率用等额本息反推；剩余本金 = 按该月供摊还到今天之后的余额；已还本金 = 原始贷款 − 剩余本金。这四项由输入自动算出，不用手填。</p>` +
+      `<p class="note">临界自住租金的含义：卖出后你要付的房租高于这个数时，留房就更划算；低于这个数，卖出更划算。</p>` +
+      (best.key !== 'A'
+        ? `<p class="note" style="color:#8a5a00;background:#fffbf5;border-left:3px solid #ffd591;padding:8px 12px;border-radius:0 6px 6px 0"><b>注意：留房路径胜出，但这建立在"房产不计入现金"的前提上。</b>留房不用付 60 年房租，所以现金跑赢卖出；可这 60 年里房子本身的涨跌完全不进账。房价若继续跌，留房的优势会缩水甚至反转；若持平或回升，留房的实际优势比这里显示的更大。要看到含房产价值的口径，需要重新引入期末房价假设。</p>`
+        : '') +
+      `<p class="note">留房路径手上现金不含房产与剩余贷款，两者相互抵消（房子还在，贷款也还在）。若你想比较"把房子也算进来"的结果，这个模型不提供，需要另设期末房价。</p>`;
+
+    const costRows = [
+      ['现在卖房净得（扣成本与还贷）', res.A.saleNet, 0, 0],
+      ['租金支出', res.A.totals.rent, 0, res.C.totals.rent],
+      ['出租收入', 0, 0, res.C.totals.rentOut],
+      ['月供合计', res.A.totals.mortgage, res.B.totals.mortgage, res.C.totals.mortgage],
+      ['物业费合计', res.A.totals.pm, res.B.totals.pm, res.C.totals.pm],
+      ['水电燃气取暖合计', res.A.totals.util, res.B.totals.util, res.C.totals.util],
+      ['生活开销合计', res.A.totals.living, res.B.totals.living, res.C.totals.living],
+      ['一次性支出（搬家、押金净额）', res.A.totals.other, 0, res.C.totals.other],
+      ['存款利息合计', res.A.totals.interest, res.B.totals.interest, res.C.totals.interest],
+      ['期末透支欠款', res.A.debt, res.B.debt, res.C.debt],
+      ['期末剩余贷款（未计入现金）', res.A.loan, res.B.loan, res.C.loan],
+      ['期末手上现金', res.A.cash, res.B.cash, res.C.cash]
+    ];
+    $('costTable').innerHTML = costRows.map(([k, a, b, c]) => `<tr><td>${k}</td><td>${w(a)}</td><td>${w(b)}</td><td>${w(c)}</td></tr>`).join('');
+
+    const h = ['年', '收入', '租金', '出租收入', '月供', '物业', '水电', '生活', '一次性', '利息', '年度结余', '年末存款', '透支欠款', '剩余贷款', '手上现金'];
+    const row = r => `<tr><td>${r.year}</td><td>${yuan(r.income)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.rentOut)}</td><td>${yuan(r.mortgage)}</td><td>${yuan(r.pm)}</td><td>${yuan(r.util)}</td><td>${yuan(r.living)}</td><td>${yuan(r.other)}</td><td>${yuan(r.interest)}</td><td>${yuan(r.net)}</td><td>${yuan(r.deposit)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.loan)}</td><td>${yuan(r.cash)}</td></tr>`;
+    $('yearA').innerHTML = `<thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${res.A.yearly.map(row).join('')}</tbody>`;
+    $('yearB').innerHTML = `<thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${res.B.yearly.map(row).join('')}</tbody>`;
+    $('yearC').innerHTML = `<thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${res.C.yearly.map(row).join('')}</tbody>`;
+
+    if (!chart) return;
+    chart.setOption({
+      tooltip: { trigger: 'axis', valueFormatter: v => w(v) + ' 万' },
+      legend: { top: 0, data: PATHS.map(x => x.name) },
+      grid: { left: 66, right: 24, top: 48, bottom: 36 },
+      xAxis: { type: 'category', data: res.A.yearly.map(r => r.year + '年'), boundaryGap: false },
+      yAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e4).toFixed(0) + '万' } },
+      series: PATHS.map((pt, i) => ({
+        name: pt.name, type: 'line', smooth: true,
+        color: ['#1677ff', '#fa8c16', '#12a150'][i],
+        data: res[pt.key].yearly.map(r => r.cash)
+      }))
+    }, true);
+  }
+
+  Object.keys(DEFAULTS).forEach(k => {
+    const el = $(k);
+    el.value = DEFAULTS[k];
+    el.addEventListener('input', render);
+  });
+
+  window.addEventListener('resize', () => chart && chart.resize());
+  render();
+</script>
+</body>
+</html>
