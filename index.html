@@ -26,6 +26,19 @@
   .field label { font-size: 13px; color: #475569; }
   .field input { width: 130px; padding: 7px 10px; border: 1px solid #d6dde8; border-radius: 8px; font-size: 14px; text-align: right; outline: none; }
   .field input:focus { border-color: #1677ff; box-shadow: 0 0 0 3px rgba(22,119,255,.12); }
+  .field input[readonly] { background: #f5f7fa; color: #94a3b8; }
+  /* 三阶段分组 */
+  .phases { border: 1px solid #e5e9f0; border-radius: 12px; padding: 4px 12px 10px; margin-top: 10px; background: #fbfcfe; }
+  .phase { border-top: 1px solid #eef2f7; padding: 6px 0 4px; }
+  .phase:first-of-type { border-top: none; }
+  .phase h4 { font-size: 13px; font-weight: 600; color: #334155; margin: 6px 0 2px; display: flex; align-items: center; gap: 6px; }
+  .phase h4 .tag { font-size: 11px; font-weight: 500; color: #fff; background: #1677ff; border-radius: 4px; padding: 1px 6px; }
+  .phase.p2 h4 .tag { background: #d48806; }
+  .phase.p3 h4 .tag { background: #389e0d; }
+  .phase p { font-size: 11px; color: #94a3b8; margin: 0 0 4px; line-height: 1.6; }
+  .phase .field { padding: 6px 0; }
+  .phase .field label { font-size: 12px; color: #64748b; }
+  .phase .field input { width: 104px; padding: 5px 8px; font-size: 13px; }
   .mode { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
   .mode p { font-size: 13px; color: #64748b; margin-top: 4px; }
   .mode button { padding: 10px 16px; border: none; border-radius: 10px; background: #1677ff; color: #fff; font-size: 14px; cursor: pointer; }
@@ -59,7 +72,7 @@
 <body>
 <header>
   <h1>买房 VS 租房 对比计算器</h1>
-  <p>同一个人的两种选择，比较第 N 年末手上的现金</p>
+  <p id="subtitle">同一个人的两种选择，比较第 60 年末手上的现金</p>
 </header>
 
 <nav class="nav">
@@ -73,6 +86,7 @@
       <h2>房产参数</h2>
       <div class="field"><label>当前房屋总价（万元）</label><input id="price" type="number" step="1"></div>
       <div class="field"><label>第 N 年末房价（万元）</label><input id="futurePrice" type="number" step="1"></div>
+      <div class="field"><label>第几年购房（第 1～60 年）</label><input id="buyYear" type="number" step="1"></div>
       <div class="field"><label>首付比例（%）</label><input id="downRatio" type="number" step="1"></div>
       <div class="field"><label>购房税费比例（%，契税、印花税等）</label><input id="taxRate" type="number" step="0.1"></div>
       <div class="field"><label>房贷年利率（%）</label><input id="rate" type="number" step="0.01"></div>
@@ -87,11 +101,35 @@
     </div>
     <div class="card">
       <h2>个人与理财参数</h2>
-      <div class="field"><label>对比周期 N（年）</label><input id="horizon" type="number" step="1"></div>
-      <div class="field"><label>个人月收入（元）</label><input id="income" type="number" step="500"></div>
-      <div class="field"><label>每月其他生活开销（元）</label><input id="living" type="number" step="100"></div>
+      <div class="field"><label>对比周期 N（年，固定 60 年）</label><input id="horizon" type="number" step="1" readonly></div>
       <div class="field"><label>同地段月租金（元）</label><input id="rent" type="number" step="100"></div>
       <div class="field"><label>存款年化利率（%）</label><input id="invRate" type="number" step="0.1"></div>
+      <div class="field"><label>当前年龄（岁）</label><input id="currentAge" type="number" step="1"></div>
+
+      <div class="phases">
+        <div class="phase p1">
+          <h4><span class="tag">阶段 1</span>工作期</h4>
+          <p>有工资收入，没有养老金。</p>
+          <div class="field"><label>开始工作年龄（岁）</label><input id="p1StartAge" type="number" step="1"></div>
+          <div class="field"><label>每月工作收入（元）</label><input id="income" type="number" step="500"></div>
+          <div class="field"><label>每月其他生活开销（元）</label><input id="living1" type="number" step="100"></div>
+        </div>
+
+        <div class="phase p2">
+          <h4><span class="tag">阶段 2</span>提前退休（无工资无养老金）</h4>
+          <p>工作结束、还没到领养老金年龄：没有工资也没有养老金，生活开销全部从已有存款里扣（靠利息和吃老本），存款不够就变负债。</p>
+          <div class="field"><label>提前退休年龄（岁，0 = 不启用）</label><input id="p2StartAge" type="number" step="1"></div>
+          <div class="field"><label>每月其他生活开销（元）</label><input id="living2" type="number" step="100"></div>
+        </div>
+
+        <div class="phase p3">
+          <h4><span class="tag">阶段 3</span>领养老金</h4>
+          <p>到龄开始领养老金，一直领到期末。</p>
+          <div class="field"><label>领养老金年龄（岁，0 = 不启用）</label><input id="p3StartAge" type="number" step="1"></div>
+          <div class="field"><label>每月养老金（元）</label><input id="pension" type="number" step="100"></div>
+          <div class="field"><label>每月其他生活开销（元）</label><input id="living3" type="number" step="100"></div>
+        </div>
+      </div>
     </div>
   </aside>
 
@@ -134,14 +172,21 @@
       <div class="scroll"><table class="yt" id="yearR"></table></div>
       <p class="note">年末现金不含房屋变现、期末剩余贷款和期末扣款（见上方扣款框）。</p>
       <p class="note">存款利息按"存款年化利率"（默认 1.3%）按月复利计算，仅对正余额生效；若现金流为负形成负债，负债不计息也不复利。</p>
+      <p class="note">购房当年的首付、税费与装修费一次性支出，若自有资金不足会自动转为负债；装修费从购房次年起按月分期偿还。</p>
+      <p class="note">"阶段"列标明当年处于哪个阶段：① 工作 / ② 提前退休 / ③ 领养老金。"年龄"列是当年年末的年龄（当前年龄 + 年份 − 1）。买房表中 🏠 标记购房当年，橙色底标记阶段切换当年。</p>
     </div>
   </main>
 </div>
 
 <footer>
   <div class="card">
-    <p>提示：两人都从零开始攒钱。买房者攒够"首付 + 购房税费"后购房，购房前与租房者生活支出相同。</p>
-    <p>提示：装修费无利息，按装修费还款年限等额按月偿还。现金不足时形成的负债同样不计利息，结果仅供参考。</p>
+    <p>提示：买房者在设定年份购房，购房前与租房者生活支出相同。不限制购房时的自有资金——首付、税费和装修费付不出来的部分会自动记为负债（负债不计息、不复利）。</p>
+    <p>提示：装修费在购房时一次付清，随后按装修费还款年限无息分期偿还。现金不足时形成的负债同样不计利息，结果仅供参考。</p>
+    <p>提示：对比周期固定为 60 年。贷款年限、装修还款年限超过 60 年的部分不会产生支出，期末负债照实保留。</p>
+    <p>提示：个人收入分三个阶段——① 工作期（有工资）；② 提前退休期（无工资无养老金）；③ 领养老金期（有养老金无工资）。三个阶段各自填一份"每月其他生活开销"，年龄填 0 表示该阶段不启用。</p>
+    <p>提示：阶段用年龄表示。「当前年龄」对应第 1 年，所以第 A 岁落在第 (A − 当前年龄 + 1) 年。默认当前 25 岁、55 岁提前退休、65 岁领养老金，分别对应第 1 年、第 31 年、第 41 年。</p>
+    <p>提示：提前退休期不领工资也不领养老金，生活开销直接从已有存款里扣（先吃利息，再吃本金），存款不够就记为透支欠款。没有额外的"理财提取"——开销花的就是存款。</p>
+    <p>提示：养老金不随时间增长，也未计入社保调整与通货膨胀。阶段划分对买房者和租房者是同一个人的共同事件。</p>
     <p>提示：卖房时的交易成本（税费、中介费等）未计入计算，实际卖房时可能需要另行考虑。</p>
   </div>
 </footer>
@@ -149,22 +194,33 @@
 <script>
   const $ = id => document.getElementById(id);
 
+  const HORIZON = 60;
+
   const DEFAULTS = {
-    price: 100, futurePrice: 70, downRatio: 30, taxRate: 1.5, rate: 3, loanYears: 30,
+    price: 100, futurePrice: 70, buyYear: 10, downRatio: 30, taxRate: 1.5, rate: 3, loanYears: 30,
     decor: 15, decorYears: 30, tempMonths: 3, renov: 10, renovYear: 30, pmFee: 200, utilities: 300,
-    horizon: 30, income: 6000, living: 2000, rent: 2400, invRate: 1.3
+    horizon: HORIZON, rent: 2400, invRate: 1.3, currentAge: 25,
+    // 阶段 1：工作期
+    p1StartAge: 25, income: 6000, living1: 2000,
+    // 阶段 2：提前退休（无工资无养老金）
+    p2StartAge: 55, living2: 2000,
+    // 阶段 3：领养老金
+    p3StartAge: 65, pension: 3000, living3: 2000
   };
 
   const LIMITS = {
-    price: [1, 1e4], futurePrice: [0, 1e4], downRatio: [0, 100], taxRate: [0, 10], rate: [0, 30],
+    price: [1, 1e4], futurePrice: [0, 1e4], buyYear: [1, HORIZON], downRatio: [0, 100], taxRate: [0, 10], rate: [0, 30],
     loanYears: [1, 50], decor: [0, 1e4], decorYears: [1, 50], tempMonths: [0, 36],
     renov: [0, 1e4], renovYear: [1, 100], pmFee: [0, 1e5], utilities: [0, 1e5],
-    horizon: [1, 50], income: [0, 1e7], living: [0, 1e6], rent: [0, 1e6], invRate: [-10, 30]
+    horizon: [1, HORIZON], rent: [0, 1e6], invRate: [-10, 30], currentAge: [1, 100],
+    p1StartAge: [0, 120], income: [0, 1e7], living1: [0, 1e6],
+    p2StartAge: [0, 120], living2: [0, 1e6],
+    p3StartAge: [0, 120], pension: [0, 1e6], living3: [0, 1e6]
   };
 
   const chart = typeof echarts !== 'undefined' ? echarts.init($('chart')) : null;
 
-  let keepHouse = false;
+  let keepHouse = true;
 
   const w = y => (y / 1e4).toLocaleString('zh-CN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const yuan = v => Math.round(v).toLocaleString('zh-CN');
@@ -182,7 +238,14 @@
     p.decorYears = Math.round(p.decorYears);
     p.tempMonths = Math.round(p.tempMonths);
     p.renovYear = Math.round(p.renovYear);
-    p.horizon = Math.round(p.horizon);
+    p.horizon = HORIZON;
+    p.buyYear = Math.round(p.buyYear);
+    p.currentAge = Math.round(p.currentAge);
+    p.p1StartAge = Math.round(p.p1StartAge);
+    p.p2StartAge = Math.round(p.p2StartAge);
+    p.p3StartAge = Math.round(p.p3StartAge);
+    // 购房年份越界时回写输入框，避免"框里写着 999、模型按 60 算"
+    if (parseFloat($('buyYear').value) !== p.buyYear) $('buyYear').value = p.buyYear;
     return p;
   }
 
@@ -205,6 +268,33 @@
     const loanN = p.loanYears * 12, N = p.horizon * 12;
     const decorN = p.decorYears * 12, decorPay = decor / decorN;
     const tempN = p.tempMonths, renovK = p.renovYear * 12;
+    // 购房月：固定年份，不受"攒够首付"约束（可负债买房）
+    const buyMonth = p.buyYear * 12;
+
+    /* ---- 三阶段收入/开销模型 ----
+       阶段1 工作期：   有工资，无养老金
+       阶段2 提前退休： 无工资无养老金，开销全部从存款里扣
+       阶段3 领养老金： 有养老金无工资
+       阶段用"年龄"表示：当前年龄 currentAge 对应第 1 年，
+       所以"第 A 岁"落在第 (A - currentAge + 1) 年，起始月 = (A - currentAge)*12 + 1。
+       阶段年龄填 0 表示该阶段不启用；阶段2/3 未启用时阶段1 持续到期末。 */
+    const ageToYear = age => age - p.currentAge + 1;
+    const ageToMonth = age => (age - p.currentAge) * 12 + 1;
+    const p1StartM = ageToMonth(p.p1StartAge);
+    const p2StartM = p.p2StartAge > 0 ? ageToMonth(p.p2StartAge) : Infinity;
+    const p3StartM = p.p3StartAge > 0 ? ageToMonth(p.p3StartAge) : Infinity;
+
+    // 某个月所处的阶段：0 = 阶段1工作期, 1 = 阶段2提前退休, 2 = 阶段3领养老金
+    const phaseOf = m => {
+      if (m >= p3StartM) return 2;
+      if (m >= p2StartM) return 1;
+      return 0;
+    };
+    // 阶段1 之前（尚未开始工作）：无收入无开销
+    const working = m => m >= p1StartM;
+
+    const phaseIncome = ph => ph === 2 ? p.pension : (ph === 0 ? p.income : 0);
+    const phaseLiving = ph => ph === 2 ? p.living3 : (ph === 1 ? p.living2 : p.living1);
 
     const pay = loan <= 0 ? 0
       : r === 0 ? loan / loanN
@@ -216,8 +306,8 @@
     let aB = zeroB(), aR = zeroR();
 
     const years = [0], buyer = [0], renter = [0];
-    let bal = loan, decorBal = decor, sb = 0, debtB = 0, sr = 0, debtR = 0;
-    let bought = false, buyMonth = 0, renovDone = false;
+    let bal = loan, decorBal = 0, sb = 0, debtB = 0, sr = 0, debtR = 0;
+    let bought = false, renovDone = false;
 
     for (let m = 1; m <= N; m++) {
       aB.interest += sb * i;
@@ -225,51 +315,63 @@
       sb *= 1 + i;
       sr *= 1 + i;
 
-      const flowR = p.income - p.rent - p.utilities - p.living;
+      const ph = phaseOf(m);
+      const inc = working(m) ? phaseIncome(ph) : 0;
+      const liv = working(m) ? phaseLiving(ph) : 0;
+
+      const flowR = inc - p.rent - p.utilities - liv;
       [sr, debtR] = applyFlow(sr, debtR, flowR);
-      aR.income += p.income;
+      aR.income += inc;
       aR.rent += p.rent;
       aR.util += p.utilities;
-      aR.living += p.living;
+      aR.living += liv;
 
-      if (!bought) {
-        [sb, debtB] = applyFlow(sb, debtB, p.income - p.rent - p.utilities - p.living);
-        aB.income += p.income;
+      if (!bought && m === buyMonth) {
+        // 购房月：一次性支付首付 + 购房税费
+        // 现金不足的部分自动形成负债（不计息），允许负债买房
+        [sb, debtB] = applyFlow(sb, debtB, -threshold);
+        bought = true;
+        aB.income += inc;
         aB.rent += p.rent;
         aB.util += p.utilities;
-        aB.living += p.living;
-        if (debtB === 0 && sb >= threshold) {
-          sb -= threshold;
-          bought = true;
-          buyMonth = m;
-        }
+        aB.living += liv;
+        // 装修费为无息负债：总额在购房时起算，按装修还款年限等额按月偿还
+        decorBal = decor;
+      } else if (!bought) {
+        // 购房前：与租房者收支相同
+        [sb, debtB] = applyFlow(sb, debtB, inc - p.rent - p.utilities - liv);
+        aB.income += inc;
+        aB.rent += p.rent;
+        aB.util += p.utilities;
+        aB.living += liv;
       } else {
         const k = m - buyMonth;
         const paying = k <= loanN;
-        const decorPaying = k <= decorN;
+        const decorPaying = k > 0 && k <= decorN;
         const temp = k <= tempN;
         const renovNow = k === renovK;
         if (paying) bal = Math.max(0, bal * (1 + r) - pay);
         if (decorPaying) decorBal = Math.max(0, decorBal - decorPay);
         if (renovNow) renovDone = true;
         [sb, debtB] = applyFlow(sb, debtB,
-          p.income - (paying ? pay : 0) - (decorPaying ? decorPay : 0) - (renovNow ? renov : 0)
-          - p.pmFee - p.utilities - p.living - (temp ? p.rent : 0));
-        aB.income += p.income;
+          inc - (paying ? pay : 0) - (decorPaying ? decorPay : 0) - (renovNow ? renov : 0)
+          - p.pmFee - p.utilities - liv - (temp ? p.rent : 0));
+        aB.income += inc;
         aB.mortgage += paying ? pay : 0;
         aB.decor += decorPaying ? decorPay : 0;
         aB.renov += renovNow ? renov : 0;
         aB.pm += p.pmFee;
         aB.util += p.utilities;
-        aB.living += p.living;
+        aB.living += liv;
         aB.temp += temp ? p.rent : 0;
       }
 
       if (m % 12 === 0) {
         const outB = aB.rent + aB.mortgage + aB.decor + aB.renov + aB.pm + aB.util + aB.living + aB.temp;
         const outR = aR.rent + aR.util + aR.living;
-        yearlyB.push({ year: m / 12, ...aB, net: aB.income + aB.interest - outB, deposit: sb, debt: debtB, cash: sb - debtB });
-        yearlyR.push({ year: m / 12, ...aR, net: aR.income + aR.interest - outR, deposit: sr, debt: debtR, cash: sr - debtR });
+        // 年度结余 = 收入 + 利息 − 支出
+        yearlyB.push({ year: m / 12, phase: phaseOf(m), ...aB, net: aB.income + aB.interest - outB, deposit: sb, debt: debtB, cash: sb - debtB });
+        yearlyR.push({ year: m / 12, phase: phaseOf(m), ...aR, net: aR.income + aR.interest - outR, deposit: sr, debt: debtR, cash: sr - debtR });
         aB = zeroB();
         aR = zeroR();
 
@@ -288,16 +390,46 @@
       if ((buyer[k - 1] - renter[k - 1] >= 0) !== (buyer[k] - renter[k] >= 0)) { cross = k; break; }
     }
 
+    // 购房当年年末的负债、以及整个周期内的最大负债
+    const buyRow = bought ? yearlyB.find(r => r.year === p.buyYear) : null;
+    const debtAtBuy = buyRow ? buyRow.debt : 0;
+    let peakDebt = 0;
+    yearlyB.forEach(r => { if (r.debt > peakDebt) peakDebt = r.debt; });
+
+    // 各阶段的月结余（买房 / 租房），仅在该阶段实际启用时才有意义
+    // 阶段2 无收入，结余为负：生活开销直接从存款里扣
+    const ageInRange = age => age > 0 && ageToYear(age) >= 1 && ageToYear(age) <= p.horizon;
+    const p1On = ageInRange(p.p1StartAge);
+    const p2On = ageInRange(p.p2StartAge);
+    const p3On = ageInRange(p.p3StartAge);
+    const surplusOf = ph => ({
+      buyer: phaseIncome(ph) - pay - p.pmFee - p.utilities - phaseLiving(ph) - decorPay,
+      renter: phaseIncome(ph) - p.rent - p.utilities - phaseLiving(ph)
+    });
+
     return {
       years, buyer, renter, diff, cross, yearlyB, yearlyR,
       bought, buyMonth, renovDone, threshold, down, taxes, decor, renov, pay,
       decorLeft: bought ? decorBal : 0,
       debtEnd: debtB,
+      debtAtBuy,
+      peakDebt,
       remainLoan: bought ? bal : 0,
       buyerNet: buyer[last],
       renterNet: renter[last],
-      buyerSurplus: p.income - pay - p.pmFee - p.utilities - p.living - decorPay,
-      renterSurplus: p.income - p.rent - p.utilities - p.living,
+      // 三阶段开关与参数
+      p1On, p2On, p3On,
+      currentAge: p.currentAge,
+      p1StartAge: p.p1StartAge,
+      p2StartAge: p.p2StartAge,
+      p3StartAge: p.p3StartAge,
+      p2Year: p.p2StartAge > 0 ? ageToYear(p.p2StartAge) : null,
+      p3Year: p.p3StartAge > 0 ? ageToYear(p.p3StartAge) : null,
+      pension: p.pension,
+      // 各阶段月结余
+      surplusP1: surplusOf(0),
+      surplusP2: surplusOf(1),
+      surplusP3: surplusOf(2),
       preRent: sum(yearlyB, 'rent'),
       tempTotal: sum(yearlyB, 'temp'),
       payTotal: sum(yearlyB, 'mortgage'),
@@ -315,17 +447,18 @@
     p.keepHouse = keepHouse;
     const res = calc(p);
     const up = res.diff >= 0;
-    const buyText = res.bought ? `约 ${(res.buyMonth / 12).toFixed(1)} 年后攒够首付购房` : '';
+    const buyText = `第 ${p.buyYear} 年购房`;
 
     $('modeBtn').textContent = keepHouse ? '切换为：期末卖房' : '切换为：不卖房（自住到期末）';
+    $('subtitle').textContent = `同一个人（现年 ${p.currentAge} 岁）的两种选择，比较第 ${p.horizon} 年末（${p.currentAge + p.horizon - 1} 岁）手上的现金`;
     $('modeText').textContent = keepHouse
       ? `当前：不卖房，第 ${p.horizon} 年末保留房产，房产估值不计入现金，但仍需偿还剩余贷款。`
       : `当前：期末卖房，房产卖出所得（扣除剩余贷款）计入现金。`;
 
     if (!res.bought) {
-      $('deduct').innerHTML = `<small>买房者在对比周期内未攒够首付，未购房，无期末扣款。</small>`;
+      $('deduct').innerHTML = `<small>购房年份超出对比周期，未发生购房，无期末扣款。</small>`;
       $('verdict').innerHTML =
-        `${p.horizon}年内买房者攒不够首付（需要 <span class="num">${w(res.threshold)}</span> 万元），未能购房。<br>` +
+        `设定的购房年份（第 ${p.buyYear} 年）超出对比周期 ${p.horizon} 年，未发生购房。<br>` +
         `买房者手上现金为 <span class="num">${w(res.buyerNet)}</span> 万元，` +
         `租房者手上现金为 <span class="num">${w(res.renterNet)}</span> 万元。`;
     } else {
@@ -336,22 +469,53 @@
           ? `翻新费 ${w(res.renov)} 万元于购房后第 ${p.renovYear} 年末支出，已计入现金流；`
           : `翻新未在购房后的对比周期内发生，未计入；`) +
         `装修费无利息</small>`;
+      const debtNote = res.debtAtBuy > 0
+        ? `<br><span style="font-size:13px;color:#64748b">购房当年自有资金不足，形成负债 <span class="num" style="font-size:15px">${w(res.debtAtBuy)}</span> 万元（不计息）</span>`
+        : '';
+      // 三阶段说明
+      const phaseNotes = [];
+      if (res.p1On) phaseNotes.push(`${p.p1StartAge} 岁起工作，月收入 ${yuan(p.income)} 元`);
+      if (res.p2On) phaseNotes.push(`${p.p2StartAge} 岁提前退休（无工资无养老金，开销吃存款）`);
+      if (res.p3On) phaseNotes.push(`${p.p3StartAge} 岁起领养老金 ${yuan(p.pension)} 元`);
+      const phaseNote = phaseNotes.length
+        ? `<br><span style="font-size:13px;color:#64748b">${phaseNotes.join('；')}</span>`
+        : '';
       $('verdict').innerHTML =
-        `${p.horizon}年后，买房者手上现金为 <span class="num">${w(res.buyerNet)}</span> 万元，` +
+        `${p.horizon}年后（${res.currentAge + p.horizon - 1} 岁），买房者手上现金为 <span class="num">${w(res.buyerNet)}</span> 万元，` +
         `租房者手上现金为 <span class="num">${w(res.renterNet)}</span> 万元。<br>` +
         `买房比租房<span class="${up ? 'pos' : 'neg'}">${up ? '多' : '少'}</span>赚 ` +
         `<span class="num">${w(Math.abs(res.diff))}</span> 万元。<br>` +
-        `<span style="font-size:13px;color:#64748b">${buyText}</span>` +
+        `<span style="font-size:13px;color:#64748b">${buyText}</span>` + debtNote + phaseNote +
         (keepHouse ? `<br><span style="font-size:13px;color:#64748b">不卖房：房产估值 ${w(p.futurePrice * 1e4)} 万元未计入现金</span>` : '');
     }
 
     const stats = [
       ['每月月供（购房后）', `${yuan(res.pay)} 元`],
       ['购房所需（首付+税费）', `${w(res.threshold)} 万元`],
-      ['买房时间', res.bought ? `约 ${(res.buyMonth / 12).toFixed(1)} 年后` : '未购房'],
-      ['购房后每月结余', `${yuan(res.buyerSurplus)} 元`],
-      ['租房每月结余', `${yuan(res.renterSurplus)} 元`],
-      ['买房/租房交叉点', res.cross ? `第 ${res.cross} 年` : '无交叉']
+      ['购房年份', res.bought ? `第 ${p.buyYear} 年` : '未购房'],
+      ['当前年龄', `${res.currentAge} 岁`],
+      ...(res.p1On ? [
+        ['阶段1 开始工作年龄', `${p.p1StartAge} 岁`],
+        ['阶段1 工作月收入', `${yuan(p.income)} 元`],
+        ['阶段1 买房月结余', `${yuan(res.surplusP1.buyer)} 元`],
+        ['阶段1 租房月结余', `${yuan(res.surplusP1.renter)} 元`]
+      ] : []),
+      ...(res.p2On ? [
+        ['阶段2 提前退休年龄', `${p.p2StartAge} 岁（第 ${res.p2Year} 年）`],
+        ['阶段2 买房月结余', `${yuan(res.surplusP2.buyer)} 元`],
+        ['阶段2 租房月结余', `${yuan(res.surplusP2.renter)} 元`]
+      ] : []),
+      ...(res.p3On ? [
+        ['阶段3 领养老金年龄', `${p.p3StartAge} 岁（第 ${res.p3Year} 年）`],
+        ['阶段3 每月养老金', `${yuan(p.pension)} 元`],
+        ['阶段3 买房月结余', `${yuan(res.surplusP3.buyer)} 元`],
+        ['阶段3 租房月结余', `${yuan(res.surplusP3.renter)} 元`]
+      ] : []),
+      ['买房/租房交叉点', res.cross ? `第 ${res.cross} 年` : '无交叉'],
+      ['购房当年末负债', `${w(res.debtAtBuy)} 万元`],
+      ['周期内最大负债', `${w(res.peakDebt)} 万元`],
+      ['期末负债', `${w(res.debtEnd)} 万元`],
+      ['期末剩余贷款', `${w(res.remainLoan)} 万元`]
     ];
     $('stats').innerHTML = stats.map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
 
@@ -379,25 +543,70 @@
     ];
     $('rentTable').innerHTML = rentRows.map(([k, v]) => `<tr><td>${k}</td><td>${w(v)}</td></tr>`).join('');
 
-    const hB = ['年', '收入', '租金（购房前）', '月供', '装修分期', '翻新', '物业费', '水电燃气取暖', '生活开销', '临时租房', '存款利息', '年度结余', '年末存款', '年末负债', '年末现金'];
-    const hR = ['年', '收入', '租金', '水电燃气取暖', '生活开销', '存款利息', '年度结余', '年末存款', '年末负债', '年末现金'];
+    const hB = ['年', '年龄', '阶段', '收入', '租金（购房前）', '月供', '装修分期', '翻新', '物业费', '水电燃气取暖', '生活开销', '临时租房', '存款利息', '年度结余', '年末存款', '年末负债', '年末现金'];
+    const hR = ['年', '年龄', '阶段', '收入', '租金', '水电燃气取暖', '生活开销', '存款利息', '年度结余', '年末存款', '年末负债', '年末现金'];
+    const PHASE_LABEL = ['① 工作', '② 提前退休', '③ 领养老金'];
+    const isBuyYear = r => res.bought && r.year === p.buyYear;
+    const isPhaseStart = r => (res.p2On && r.year === res.p2Year) || (res.p3On && r.year === res.p3Year);
+    const rowStyle = r => isBuyYear(r)
+      ? ' style="background:#eef5ff;font-weight:600"'
+      : isPhaseStart(r) ? ' style="background:#fff7e6;font-weight:600"' : '';
+    const phaseCell = r => PHASE_LABEL[r.phase] || '';
+    const yearCell = r => isBuyYear(r) ? `${r.year} 🏠` : `${r.year}`;
+    const ageCell = r => res.currentAge + r.year - 1;
     $('yearB').innerHTML = `<thead><tr>${hB.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>` +
-      res.yearlyB.map(r => `<tr><td>${r.year}</td><td>${yuan(r.income)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.mortgage)}</td><td>${yuan(r.decor)}</td><td>${yuan(r.renov)}</td><td>${yuan(r.pm)}</td><td>${yuan(r.util)}</td><td>${yuan(r.living)}</td><td>${yuan(r.temp)}</td><td>${yuan(r.interest)}</td><td>${yuan(r.net)}</td><td>${yuan(r.deposit)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.cash)}</td></tr>`).join('') +
+      res.yearlyB.map(r => `<tr${rowStyle(r)}><td>${yearCell(r)}</td><td>${ageCell(r)}</td><td>${phaseCell(r)}</td><td>${yuan(r.income)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.mortgage)}</td><td>${yuan(r.decor)}</td><td>${yuan(r.renov)}</td><td>${yuan(r.pm)}</td><td>${yuan(r.util)}</td><td>${yuan(r.living)}</td><td>${yuan(r.temp)}</td><td>${yuan(r.interest)}</td><td>${yuan(r.net)}</td><td>${yuan(r.deposit)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.cash)}</td></tr>`).join('') +
       '</tbody>';
     $('yearR').innerHTML = `<thead><tr>${hR.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>` +
-      res.yearlyR.map(r => `<tr><td>${r.year}</td><td>${yuan(r.income)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.util)}</td><td>${yuan(r.living)}</td><td>${yuan(r.interest)}</td><td>${yuan(r.net)}</td><td>${yuan(r.deposit)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.cash)}</td></tr>`).join('') +
+      res.yearlyR.map(r => `<tr${isPhaseStart(r) ? ' style="background:#fff7e6;font-weight:600"' : ''}><td>${r.year}</td><td>${ageCell(r)}</td><td>${phaseCell(r)}</td><td>${yuan(r.income)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.util)}</td><td>${yuan(r.living)}</td><td>${yuan(r.interest)}</td><td>${yuan(r.net)}</td><td>${yuan(r.deposit)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.cash)}</td></tr>`).join('') +
       '</tbody>';
 
     if (!chart) return;
+    const markLines = [];
+    if (res.bought) {
+      markLines.push({
+        xAxis: p.buyYear + '年',
+        label: { formatter: '第' + p.buyYear + '年购房', position: 'insideEndTop', fontSize: 11, color: '#8c8c8c' },
+        lineStyle: { color: '#8c8c8c', type: 'dashed', width: 1 }
+      });
+    }
+    if (res.p2On) {
+      markLines.push({
+        xAxis: res.p2Year + '年',
+        label: { formatter: p.p2StartAge + '岁退休', position: 'insideEndTop', fontSize: 11, color: '#d48806' },
+        lineStyle: { color: '#d48806', type: 'dotted', width: 1 }
+      });
+    }
+    if (res.p3On) {
+      markLines.push({
+        xAxis: res.p3Year + '年',
+        label: { formatter: p.p3StartAge + '岁领养老金', position: 'insideEndTop', fontSize: 11, color: '#389e0d' },
+        lineStyle: { color: '#389e0d', type: 'dotted', width: 1 }
+      });
+    }
     chart.setOption({
       tooltip: { trigger: 'axis', valueFormatter: v => w(v) + ' 万' },
       legend: { top: 0, data: ['买房者手上现金', '租房者手上现金'] },
       grid: { left: 60, right: 24, top: 48, bottom: 36 },
-      xAxis: { type: 'category', data: res.years.map(y => y + '年'), boundaryGap: false },
+      xAxis: {
+        type: 'category',
+        data: res.years.map(y => y + '年'),
+        boundaryGap: false,
+        axisLabel: {
+          formatter: (v, i) => {
+            // 第 N 年对应 currentAge + N - 1 岁；第 0 年是起点，标当前年龄
+            const year = res.years[i];
+            const age = year === 0 ? res.currentAge : res.currentAge + year - 1;
+            return year % 5 === 0 ? year + '年/' + age + '岁' : year + '年';
+          },
+          fontSize: 10
+        }
+      },
       yAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e4).toFixed(0) + '万' } },
       series: [
         {
           name: '买房者手上现金', type: 'line', smooth: true, data: res.buyer, color: '#1677ff',
+          ...(markLines.length ? { markLine: { silent: true, symbol: 'none', data: markLines } } : {}),
           ...(res.cross ? { markPoint: { data: [{ coord: [res.cross, res.buyer[res.cross]], value: '交叉' }] } } : {})
         },
         { name: '租房者手上现金', type: 'line', smooth: true, data: res.renter, color: '#fa8c16' }
