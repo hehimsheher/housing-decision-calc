@@ -1,6 +1,6 @@
 # 卖房 vs 留房 决策模型（完整提示词 / 建模规范）
 
-> 对应实现：`sell-vs-hold.html`。与 `index.html`（买房 vs 租房）通过导航栏互跳。
+> 对应实现：`sell-vs-hold.html`。与 `index.html`（买房 vs 租房）、`life-plan.html`（人生现金流规划）通过导航栏互跳。
 > 样式与工程约定沿用 `房租对比-完整建模提示词.md`，不再重复。
 
 ## 1. 目标

@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人生现金流规划器</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f0f7f5; color: #1f2d3d; }
+  header { background: linear-gradient(135deg, #0f9d8a, #0a7d6e); color: #fff; text-align: center; padding: 28px 16px; }
+  header h1 { font-size: 26px; letter-spacing: 2px; }
+  header p { font-size: 13px; opacity: .85; margin-top: 6px; }
+  .nav { display: flex; gap: 8px; justify-content: center; background: #fff; padding: 10px 16px; border-bottom: 1px solid #e5e9f0; flex-wrap: wrap; }
+  .nav a { padding: 8px 16px; border-radius: 20px; font-size: 14px; color: #475569; text-decoration: none; }
+  .nav a:hover { background: #f0f7f5; }
+  .nav a.on { background: #0f9d8a; color: #fff; }
+  .wrap { max-width: 1280px; margin: 20px auto; padding: 0 16px; display: grid; grid-template-columns: 390px 1fr; gap: 20px; align-items: start; }
+  .wrap > * { min-width: 0; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+  .card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,.05); }
+  .card + .card { margin-top: 20px; }
+  h2 { font-size: 16px; color: #334155; margin-bottom: 12px; }
+  .field { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #e5e9f0; }
+  .field:last-child { border-bottom: none; }
+  .field label { font-size: 13px; color: #475569; }
+  .field input, .field select { width: 132px; padding: 7px 8px; border: 1px solid #d6dde8; border-radius: 8px; font-size: 14px; text-align: right; outline: none; background: #fff; }
+  .field select { text-align: left; }
+  .field input:focus, .field select:focus { border-color: #0f9d8a; box-shadow: 0 0 0 3px rgba(15,157,138,.12); }
+  .fixed { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e5e9f0; }
+  .fixed span { font-size: 13px; color: #475569; }
+  .fixed b { font-size: 14px; color: #0f9d8a; }
+  /* 三阶段分组 */
+  .phases { border: 1px solid #e5e9f0; border-radius: 12px; padding: 4px 12px 10px; margin-top: 10px; background: #fbfdfc; }
+  .phase { border-top: 1px solid #eef2f7; padding: 6px 0 4px; }
+  .phase:first-of-type { border-top: none; }
+  .phase h4 { font-size: 13px; font-weight: 600; color: #334155; margin: 6px 0 2px; display: flex; align-items: center; gap: 6px; }
+  .phase h4 .tag { font-size: 11px; font-weight: 500; color: #fff; background: #0f9d8a; border-radius: 4px; padding: 1px 6px; }
+  .phase.p2 h4 .tag { background: #d48806; }
+  .phase.p3 h4 .tag { background: #389e0d; }
+  .phase p { font-size: 11px; color: #94a3b8; margin: 0 0 4px; line-height: 1.6; }
+  .phase .field { padding: 6px 0; }
+  .phase .field label { font-size: 12px; color: #64748b; }
+  .phase .field input { width: 104px; padding: 5px 8px; font-size: 13px; }
+  .checkline { display: flex; align-items: center; gap: 8px; padding: 9px 0 4px; font-size: 13px; color: #475569; cursor: pointer; }
+  .checkline input { width: 16px; height: 16px; accent-color: #0f9d8a; }
+  .reset { width: 100%; margin-top: 12px; padding: 9px; border: 1px solid #d6dde8; background: #fff; color: #64748b; border-radius: 10px; font-size: 13px; cursor: pointer; }
+  .reset:hover { border-color: #0f9d8a; color: #0f9d8a; }
+  .add-btn { width: 100%; margin-top: 10px; padding: 9px; border: 1px dashed #b7d9d3; background: #f7fcfb; color: #0f9d8a; border-radius: 10px; font-size: 13px; cursor: pointer; }
+  .add-btn:hover { background: #edf9f6; }
+  @media (min-width: 901px) {
+    aside { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; padding-right: 4px; }
+    aside::-webkit-scrollbar { width: 6px; }
+    aside::-webkit-scrollbar-thumb { background: #d6dde8; border-radius: 3px; }
+  }
+  /* 大件支出行 */
+  .big-row { border: 1px solid #e5e9f0; border-radius: 10px; padding: 8px 10px 10px; margin-bottom: 8px; background: #fbfdfc; }
+  .br-head { display: flex; gap: 8px; align-items: center; }
+  .br-head input { flex: 1; padding: 6px 8px; border: 1px solid #d6dde8; border-radius: 7px; font-size: 13px; outline: none; }
+  .br-head input:focus { border-color: #0f9d8a; }
+  .br-del { width: 26px; height: 26px; border: none; border-radius: 7px; background: #fff1f0; color: #cf1322; font-size: 16px; line-height: 1; cursor: pointer; }
+  .br-del:hover { background: #ffe0de; }
+  .br-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 8px; margin-top: 8px; }
+  .br-grid label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #64748b; }
+  .br-grid input { width: 100%; padding: 5px 7px; border: 1px solid #d6dde8; border-radius: 6px; font-size: 12px; text-align: right; outline: none; }
+  .br-grid input:focus { border-color: #0f9d8a; }
+  @media (max-width: 420px) { .br-grid { grid-template-columns: 1fr; } }
+  .verdict { background: linear-gradient(135deg, #edfbf8, #f8fffd); border-radius: 14px; padding: 22px 18px; text-align: center; font-size: 17px; line-height: 2; font-weight: 600; }
+  .num { color: #0f9d8a; font-size: 25px; font-weight: 700; }
+  .pos { color: #e5484d; }
+  .neg { color: #12a150; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  @media (max-width: 700px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { background: #f7faf9; border-radius: 10px; padding: 10px 12px; }
+  .stat span { display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; }
+  .stat b { font-size: 15px; color: #1f2d3d; }
+  #chart { height: 400px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 8px 6px; border-bottom: 1px solid #eef2f7; text-align: left; }
+  th { color: #64748b; font-weight: 500; font-size: 13px; }
+  td:last-child, th:last-child { text-align: right; }
+  .scroll { overflow-x: auto; }
+  .yt { font-size: 12px; min-width: 100%; }
+  .yt th, .yt td { white-space: nowrap; text-align: right; padding: 6px; }
+  .yt th { font-weight: 500; color: #64748b; }
+  .yt th:first-child, .yt td:first-child { text-align: left; }
+  .note { font-size: 12px; color: #94a3b8; margin-top: 8px; line-height: 1.8; }
+  footer { max-width: 1280px; margin: 0 auto 30px; padding: 0 16px; }
+  footer .card { font-size: 13px; color: #64748b; line-height: 1.9; }
+  footer p + p { margin-top: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>人生现金流规划器</h1>
+  <p id="subtitle">从当前存款和负债出发，把工作、退休、社保公积金、买房、买车放进同一条现金流</p>
+</header>
+
+<nav class="nav">
+  <a href="index.html">① 未购房：买房 vs 租房</a>
+  <a href="sell-vs-hold.html">② 已购房：卖房 vs 留房</a>
+  <a href="life-plan.html" class="on">③ 人生规划：现金 / 社保 / 买房 / 大件</a>
+</nav>
+
+<div class="wrap">
+  <aside>
+    <div class="card">
+      <h2>当前状况</h2>
+      <div class="field"><label>当前年龄（岁）</label><input id="currentAge" type="number" step="1"></div>
+      <div class="field"><label>当前存款（万元）</label><input id="cash" type="number" step="1"></div>
+      <div class="field"><label>当前负债（万元）</label><input id="debt" type="number" step="1"></div>
+      <div class="field"><label>负债年利率（%，0 = 不计息）</label><input id="debtRate" type="number" step="0.1"></div>
+      <div class="field"><label>存款年化利率（%）</label><input id="invRate" type="number" step="0.1"></div>
+      <div class="fixed"><span>规划周期</span><b>60 年（固定）</b></div>
+    </div>
+
+    <div class="card">
+      <h2>收入与三阶段</h2>
+      <div class="phases">
+        <div class="phase p1">
+          <h4><span class="tag">阶段 1</span>工作期</h4>
+          <p>有工资收入，没有养老金；社保和公积金只在工作期缴纳。</p>
+          <div class="field"><label>开始工作年龄（岁）</label><input id="p1StartAge" type="number" step="1"></div>
+          <div class="field"><label>每月工作收入（元）</label><input id="income" type="number" step="500"></div>
+          <div class="field"><label>每月其他生活开销（元）</label><input id="living1" type="number" step="100"></div>
+        </div>
+        <div class="phase p2">
+          <h4><span class="tag">阶段 2</span>提前退休（无工资无养老金）</h4>
+          <p>没有工资也没有养老金，生活开销全部从已有存款里扣，存款不够就变负债。</p>
+          <div class="field"><label>提前退休年龄（岁，0 = 不启用）</label><input id="p2StartAge" type="number" step="1"></div>
+          <div class="field"><label>每月其他生活开销（元）</label><input id="living2" type="number" step="100"></div>
+        </div>
+        <div class="phase p3">
+          <h4><span class="tag">阶段 3</span>领养老金</h4>
+          <p>到龄开始领养老金，一直领到期末。</p>
+          <div class="field"><label>领养老金年龄（岁，0 = 不启用）</label><input id="p3StartAge" type="number" step="1"></div>
+          <div class="field"><label>每月养老金（元）</label><input id="pension" type="number" step="100"></div>
+          <div class="field"><label>每月其他生活开销（元）</label><input id="living3" type="number" step="100"></div>
+        </div>
+      </div>
+      <p class="note">阶段用年龄表示：当前年龄对应第 1 年，第 A 岁落在第 (A − 当前年龄 + 1) 年。养老金仍是手填假设值，没有按社保缴费年限自动推算。</p>
+    </div>
+
+    <div class="card">
+      <h2>社保与公积金</h2>
+      <label class="checkline"><input id="paySocial" type="checkbox"> 缴纳社保</label>
+      <div class="field"><label>社保个人缴纳比例（%）</label><input id="socialRate" type="number" step="0.1"></div>
+      <label class="checkline"><input id="payFund" type="checkbox"> 缴纳公积金</label>
+      <div class="field"><label>公积金个人缴纳比例（%）</label><input id="fundPersonal" type="number" step="0.1"></div>
+      <div class="field"><label>公积金单位缴纳比例（%）</label><input id="fundEmployer" type="number" step="0.1"></div>
+      <div class="field"><label>公积金账户年利率（%）</label><input id="fundRate" type="number" step="0.1"></div>
+      <div class="field"><label>当前公积金余额（万元）</label><input id="fundBalance" type="number" step="1"></div>
+      <label class="checkline"><input id="useFund" type="checkbox"> 购房时优先用公积金余额支付首付和税费</label>
+      <p class="note">不缴社保/公积金时直接取消勾选。社保个人缴纳按工资比例从现金流里扣，不累积成资产；公积金个人 + 单位缴纳都进入公积金账户，按公积金利率计息，期末计入净资产。单位社保部分不进个人现金流。</p>
+    </div>
+
+    <div class="card">
+      <h2>住房方案</h2>
+      <div class="field">
+        <label>住房选择</label>
+        <select id="buyHouse">
+          <option value="yes">第 N 年买房</option>
+          <option value="no">一直租房，不买房</option>
+        </select>
+      </div>
+      <div class="field"><label>购房年份（第 1～60 年）</label><input id="buyYear" type="number" step="1"></div>
+      <div class="field"><label>房屋总价（万元）</label><input id="housePrice" type="number" step="1"></div>
+      <div class="field"><label>首付比例（%）</label><input id="downRatio" type="number" step="1"></div>
+      <div class="field"><label>购房税费比例（%）</label><input id="taxRate" type="number" step="0.1"></div>
+      <div class="field"><label>房贷年利率（%）</label><input id="mortgageRate" type="number" step="0.01"></div>
+      <div class="field"><label>贷款年限（年）</label><input id="loanYears" type="number" step="1"></div>
+      <div class="field"><label>每月物业费（元）</label><input id="pmFee" type="number" step="10"></div>
+      <div class="field"><label>每月水电燃气取暖（元）</label><input id="utilities" type="number" step="10"></div>
+      <div class="field"><label>同地段月租金（元）</label><input id="rent" type="number" step="100"></div>
+      <div class="field"><label>房产年增值率（%，0 = 不涨不跌）</label><input id="houseGrowth" type="number" step="0.1"></div>
+      <div class="field"><label>期末卖房交易成本（%）</label><input id="sellCost" type="number" step="0.1"></div>
+      <p class="note">买房前和一直租房时付租金；买房后不再付租金，改为月供 + 物业费。公积金贷款/组合贷可以把实际综合利率填进"房贷年利率"。</p>
+    </div>
+
+    <div class="card">
+      <h2>大件支出（买车、装修等）</h2>
+      <div id="bigList"></div>
+      <button class="add-btn" id="addBig" type="button">+ 添加一项大件</button>
+      <p class="note">金额填负数表示一次性收入（如卖旧车、家人资助）。分期按"首付比例 + 等额本息"估算；分期年数填 0 表示一次付清。</p>
+    </div>
+
+    <button class="reset" id="resetBtn" type="button">恢复默认参数</button>
+  </aside>
+
+  <main>
+    <div class="card">
+      <div class="verdict" id="verdict"></div>
+      <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="card">
+      <h2>资产走势（按年）</h2>
+      <div id="chart"></div>
+      <p class="note">净资产 = 存款 + 公积金 + 自住房估值 − 负债 − 房贷余额 − 大件分期余额。自住房按"房产年增值率"估值；若期末卖房，再扣交易成本。</p>
+    </div>
+
+    <div class="card">
+      <h2>期末资产拆解（万元）</h2>
+      <table><tbody id="assetTable"></tbody></table>
+    </div>
+
+    <div class="card">
+      <h2>累计收支（万元）</h2>
+      <table><tbody id="costTable"></tbody></table>
+      <p class="note">个人公积金是工资到公积金账户的转移，不计入"年度现金流"；单位公积金是额外进入公积金账户的钱。年度现金流 = 收入 + 单位公积金 + 利息收入 + 公积金利息 − 社保 − 生活 − 房租 − 房贷 − 物业 − 水电 − 大件 − 购房首付税费 − 负债利息。</p>
+    </div>
+
+    <div class="card">
+      <h2>大件支出明细</h2>
+      <div id="bigTable"></div>
+    </div>
+
+    <div class="card">
+      <h2>每年收支与资产明细（单位：元）</h2>
+      <div class="scroll"><table class="yt" id="yearTable"></table></div>
+      <p class="note">"大件"含一次性付款/首付和分期月供；"购房"是首付 + 税费的现金支出；"公积金个人"和"公积金单位"是账户流入，个人部分同时从现金扣除。购房当年和阶段切换当年会高亮。</p>
+    </div>
+  </main>
+</div>
+
+<footer>
+  <div class="card">
+    <p>说明：这是从当前年龄出发的 60 年现金流推演，起点是"当前存款 / 当前负债 / 当前公积金余额"，不是从零开始。</p>
+    <p>说明：社保个人缴纳按工资比例计入支出；公积金个人和单位缴纳都进入公积金账户，按公积金利率计息，期末计入净资产。养老金仍为手填假设值，没有根据社保缴费自动推算。</p>
+    <p>说明：买房是可选方案。买房时可以用公积金余额优先支付首付和税费；房贷按等额本息、固定利率计算，不提前还款。期末同时给出"继续持有房产"和"卖房扣交易成本"两个口径。</p>
+    <p>说明：大件支出支持一次付清或分期。分期按首付 + 等额本息估算，利息计入成本；金额填负数按一次性收入处理。</p>
+    <p>说明：当前负债和现金不足形成的透支欠款按"负债年利率"计息（默认 4%，填 0 即不计息）；正现金流优先还债。存款和公积金按各自利率按月复利。</p>
+    <p>提醒：页面不扣个人所得税，收入按你填写的口径计算；社保和公积金比例直接乘该收入，未设缴费基数上下限，也不校验缴纳年限对购房资格/贷款额度的影响。</p>
+    <p>提醒：本页不考虑通货膨胀、工资增长、租金上涨和房屋维修/翻新费用，所有收入、租金、开销都是固定值；结果用于辅助思考，不构成投资建议。</p>
+  </div>
+</footer>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const HORIZON = 60;
+
+  const DEFAULTS = {
+    currentAge: 28, cash: 30, debt: 0, debtRate: 4, invRate: 1.3,
+    p1StartAge: 28, income: 12000, living1: 3000,
+    p2StartAge: 55, living2: 3000,
+    p3StartAge: 65, pension: 3500, living3: 3000,
+    socialRate: 10.5, fundPersonal: 7, fundEmployer: 7, fundRate: 1.5, fundBalance: 5, paySocial: true, payFund: true, useFund: true,
+    buyHouse: 'yes', buyYear: 5, housePrice: 120, downRatio: 30, taxRate: 1.5,
+    mortgageRate: 3, loanYears: 30, pmFee: 300, utilities: 400, rent: 3000,
+    houseGrowth: 0, sellCost: 3
+  };
+
+  const LIMITS = {
+    currentAge: [1, 100], cash: [0, 1e4], debt: [0, 1e4], debtRate: [0, 30], invRate: [-10, 30],
+    p1StartAge: [0, 120], income: [0, 1e7], living1: [0, 1e6],
+    p2StartAge: [0, 120], living2: [0, 1e6],
+    p3StartAge: [0, 120], pension: [0, 1e6], living3: [0, 1e6],
+    socialRate: [0, 50], fundPersonal: [0, 50], fundEmployer: [0, 50], fundRate: [-10, 30], fundBalance: [0, 1e4],
+    buyYear: [1, HORIZON], housePrice: [1, 1e4], downRatio: [0, 100], taxRate: [0, 20],
+    mortgageRate: [0, 30], loanYears: [1, 50], pmFee: [0, 1e5], utilities: [0, 1e5], rent: [0, 1e6],
+    houseGrowth: [-20, 30], sellCost: [0, 20]
+  };
+
+  const chart = typeof echarts !== 'undefined' ? echarts.init($('chart')) : null;
+
+  const w = v => (v / 1e4).toLocaleString('zh-CN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const yuan = v => Math.round(v).toLocaleString('zh-CN');
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const PHASE_LABEL = ['① 工作', '② 提前退休', '③ 领养老金'];
+
+  const ageToYear = (age, p) => age - p.currentAge + 1;
+  const ageToMonth = (age, p) => (age - p.currentAge) * 12 + 1;
+  const phaseOfMonth = (m, p) => {
+    if (p.p3StartAge > 0 && m >= ageToMonth(p.p3StartAge, p)) return 2;
+    if (p.p2StartAge > 0 && m >= ageToMonth(p.p2StartAge, p)) return 1;
+    return 0;
+  };
+  const phaseIncome = (ph, p) => ph === 2 ? p.pension : (ph === 0 ? p.income : 0);
+  const phaseLiving = (ph, p) => ph === 2 ? p.living3 : (ph === 1 ? p.living2 : p.living1);
+  const isWorking = (m, p) => m >= ageToMonth(p.p1StartAge, p);
+
+  function payOf(bal, r, n) {
+    if (bal <= 0 || n <= 0) return 0;
+    return r === 0 ? bal / n : bal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+  }
+  function applyFlow(c, d, v) {
+    if (v >= 0) {
+      const repay = Math.min(d, v);
+      return [c + v - repay, d - repay];
+    }
+    const take = Math.min(c, -v);
+    return [c - take, d + (-v - take)];
+  }
+
+  const BIG_DEFAULTS = [
+    { name: '买车', amount: 15, year: 3, downRatio: 30, years: 3, rate: 4 }
+  ];
+  const BIG_LIMITS = {
+    amount: [-1e4, 1e4], year: [1, HORIZON], downRatio: [0, 100], years: [0, 30], rate: [0, 30]
+  };
+  let bigItems = BIG_DEFAULTS.map(x => ({ ...x }));
+
+  function renderBigList() {
+    $('bigList').innerHTML = bigItems.map((it, i) => `
+      <div class="big-row" data-idx="${i}">
+        <div class="br-head">
+          <input data-field="name" value="${esc(it.name)}" maxlength="24" placeholder="名称，如买车 / 装修">
+          <button class="br-del" type="button" data-del="${i}" title="删除">×</button>
+        </div>
+        <div class="br-grid">
+          <label>金额（万元，负=收入）<input type="number" step="1" data-field="amount" value="${it.amount}"></label>
+          <label>第几年<input type="number" step="1" data-field="year" value="${it.year}"></label>
+          <label>首付（%）<input type="number" step="1" data-field="downRatio" value="${it.downRatio}"></label>
+          <label>分期年数（0=一次付清）<input type="number" step="1" data-field="years" value="${it.years}"></label>
+          <label>分期年利率（%）<input type="number" step="0.1" data-field="rate" value="${it.rate}"></label>
+        </div>
+      </div>`).join('');
+  }
+
+  function readInputs() {
+    const p = { horizon: HORIZON };
+    for (const k in DEFAULTS) {
+      const el = $(k);
+      if (el.tagName === 'SELECT') { p[k] = el.value; continue; }
+      if (el.type === 'checkbox') { p[k] = el.checked; continue; }
+      const raw = parseFloat(el.value);
+      const v = isFinite(raw) ? raw : DEFAULTS[k];
+      const lim = LIMITS[k];
+      const clamped = lim ? clamp(v, lim[0], lim[1]) : v;
+      p[k] = clamped;
+      if (isFinite(raw) && clamped !== raw) el.value = String(clamped);
+    }
+    ['currentAge', 'p1StartAge', 'p2StartAge', 'p3StartAge', 'buyYear', 'loanYears'].forEach(k => {
+      p[k] = Math.round(p[k]);
+      const el = $(k);
+      const shown = parseFloat(el.value);
+      if (isFinite(shown) && shown !== p[k]) el.value = String(p[k]);
+    });
+    p.buyHouse = p.buyHouse === 'yes';
+    p.horizon = HORIZON;
+    return p;
+  }
+
+  function readBigItems() {
+    return bigItems.map((it, idx) => {
+      const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
+      return {
+        name: String(it.name || '').trim() || `大件 ${idx + 1}`,
+        amount: clamp(num(it.amount, 0), BIG_LIMITS.amount[0], BIG_LIMITS.amount[1]),
+        year: Math.round(clamp(num(it.year, 1), BIG_LIMITS.year[0], BIG_LIMITS.year[1])),
+        downRatio: clamp(num(it.downRatio, 0), 0, 100),
+        years: Math.round(clamp(num(it.years, 0), 0, 30)),
+        rate: clamp(num(it.rate, 0), 0, 30)
+      };
+    });
+  }
+
+  function simulate(p, bigs) {
+    const N = p.horizon * 12;
+    const i = p.invRate / 100 / 12;
+    const fi = p.fundRate / 100 / 12;
+    const dr = p.debtRate / 100 / 12;
+    const mr = p.mortgageRate / 100 / 12;
+
+    const price = p.housePrice * 1e4;
+    const down = price * p.downRatio / 100;
+    const taxes = price * p.taxRate / 100;
+    const mortgage0 = price - down;
+    const mortgageN = p.loanYears * 12;
+    const mortgagePay = payOf(mortgage0, mr, mortgageN);
+    const buyCost = down + taxes;
+    const buyMonth = p.buyHouse ? p.buyYear * 12 : Infinity;
+
+    let deposit = p.cash * 1e4;
+    let fund = p.fundBalance * 1e4;
+    let debt = p.debt * 1e4;
+    let mortgageBal = 0;
+    let bought = false;
+    let houseCostTotal = 0, fundUsedForHouse = 0;
+    let mortgagePaid = 0, mortgageInterest = 0;
+    let incomeTotal = 0, socialTotal = 0, fundPersonalTotal = 0, fundEmployerTotal = 0;
+    let livingTotal = 0, rentTotal = 0, pmTotal = 0, utilTotal = 0;
+    let depositInterestTotal = 0, fundInterestTotal = 0, debtInterestTotal = 0;
+    let minLiquid = deposit + fund - debt;
+    let peakLiability = debt;
+
+    const events = bigs.map((b, idx) => {
+      const amountY = b.amount * 1e4;
+      const loanPreview = amountY > 0 ? amountY * (1 - b.downRatio / 100) : 0;
+      const kind = amountY < 0 ? 'income' : (b.years > 0 && loanPreview > 0 ? 'installment' : (amountY > 0 ? 'once' : 'none'));
+      const downAmt = kind === 'installment' ? amountY * b.downRatio / 100 : 0;
+      const loan = kind === 'installment' ? amountY - downAmt : 0;
+      const rate = b.rate / 100 / 12;
+      return {
+        idx, name: b.name, amountY, year: b.year, month: b.year * 12,
+        downRatio: b.downRatio, years: b.years, ratePct: b.rate,
+        kind, down: downAmt, loan,
+        pay: loan > 0 ? payOf(loan, rate, b.years * 12) : 0,
+        rate, bal: 0, interest: 0, paid: 0, downPaid: 0, income: 0,
+        started: false, done: false
+      };
+    });
+
+    const zeroAcc = () => ({
+      income: 0, social: 0, fundPersonal: 0, fundEmployer: 0, living: 0, rent: 0,
+      mortgage: 0, pm: 0, util: 0, big: 0, bigIncome: 0, house: 0,
+      interestIn: 0, fundInterest: 0, debtInterest: 0
+    });
+    let acc = zeroAcc();
+    const yearly = [];
+    const years = [0];
+    const netWorthArr = [deposit + fund - debt];
+    const cashLikeArr = [deposit + fund - debt];
+    const houseArr = [0];
+
+    for (let m = 1; m <= N; m++) {
+      const ph = phaseOfMonth(m, p);
+      const working = isWorking(m, p);
+      const gross = working ? phaseIncome(ph, p) : 0;
+      const livingNow = working ? phaseLiving(ph, p) : 0;
+      const employed = working && ph === 0;
+      const social = employed && p.paySocial ? gross * p.socialRate / 100 : 0;
+      const fundP = employed && p.payFund ? gross * p.fundPersonal / 100 : 0;
+      const fundE = employed && p.payFund ? gross * p.fundEmployer / 100 : 0;
+
+      const dInt = deposit * i;
+      deposit += dInt;
+      const fInt = fund * fi;
+      fund += fInt;
+      const debtInt = debt * dr;
+      debt += debtInt;
+      fund += fundP + fundE;
+
+      acc.income += gross;
+      acc.social += social;
+      acc.fundPersonal += fundP;
+      acc.fundEmployer += fundE;
+      acc.living += livingNow;
+      acc.interestIn += dInt;
+      acc.fundInterest += fInt;
+      acc.debtInterest += debtInt;
+      incomeTotal += gross;
+      socialTotal += social;
+      fundPersonalTotal += fundP;
+      fundEmployerTotal += fundE;
+      livingTotal += livingNow;
+      depositInterestTotal += dInt;
+      fundInterestTotal += fInt;
+      debtInterestTotal += debtInt;
+
+      let flow = gross - social - fundP - livingNow - p.utilities;
+
+      let rentNow = 0;
+      if (!p.buyHouse || m < buyMonth) rentNow = p.rent;
+      flow -= rentNow;
+      acc.rent += rentNow;
+      rentTotal += rentNow;
+
+      acc.util += p.utilities;
+      utilTotal += p.utilities;
+
+      if (bought && m > buyMonth && m <= buyMonth + mortgageN && mortgageBal > 0) {
+        const interest = mortgageBal * mr;
+        let pay = mortgagePay;
+        let principal = pay - interest;
+        if (principal >= mortgageBal || m === buyMonth + mortgageN) {
+          principal = mortgageBal;
+          pay = principal + interest;
+        }
+        mortgageBal -= principal;
+        mortgageInterest += interest;
+        mortgagePaid += pay;
+        flow -= pay;
+        acc.mortgage += pay;
+      }
+
+      if (bought && m > buyMonth) {
+        flow -= p.pmFee;
+        acc.pm += p.pmFee;
+        pmTotal += p.pmFee;
+      }
+
+      if (p.buyHouse && m === buyMonth && !bought) {
+        bought = true;
+        mortgageBal = mortgage0;
+        let need = buyCost;
+        if (p.useFund) {
+          const fromFund = Math.min(fund, need);
+          fund -= fromFund;
+          need -= fromFund;
+          fundUsedForHouse += fromFund;
+        }
+        flow -= need;
+        houseCostTotal += buyCost;
+        acc.house += buyCost;
+      }
+
+      for (const e of events) {
+        if (m === e.month) {
+          if (e.kind === 'income') {
+            const inc = -e.amountY;
+            flow += inc;
+            acc.bigIncome += inc;
+            e.income = inc;
+            e.done = true;
+          } else if (e.kind === 'once') {
+            flow -= e.amountY;
+            acc.big += e.amountY;
+            e.downPaid = e.amountY;
+            e.done = true;
+          } else if (e.kind === 'installment') {
+            flow -= e.down;
+            acc.big += e.down;
+            e.downPaid = e.down;
+            e.bal = e.loan;
+            e.started = true;
+            if (e.loan <= 0) e.done = true;
+          }
+        }
+        if (e.kind === 'installment' && e.started && !e.done && m > e.month && m <= e.month + e.years * 12 && e.bal > 0) {
+          const interest = e.bal * e.rate;
+          let pay = e.pay;
+          let principal = pay - interest;
+          if (principal >= e.bal || m === e.month + e.years * 12) {
+            principal = e.bal;
+            pay = principal + interest;
+            e.bal = 0;
+            e.done = true;
+          }
+          else { e.bal -= principal; }
+          e.interest += interest;
+          e.paid += pay;
+          flow -= pay;
+          acc.big += pay;
+        }
+      }
+
+      [deposit, debt] = applyFlow(deposit, debt, flow);
+
+      const instBal = events.reduce((s, e) => s + (e.bal > 0 ? e.bal : 0), 0);
+      const liability = debt + mortgageBal + instBal;
+      const liquid = deposit + fund - debt;
+      if (liquid < minLiquid) minLiquid = liquid;
+      if (liability > peakLiability) peakLiability = liability;
+
+      if (m % 12 === 0) {
+        const netFlow = acc.income + acc.fundEmployer + acc.bigIncome
+          + acc.interestIn + acc.fundInterest
+          - acc.social - acc.living - acc.rent - acc.mortgage - acc.pm - acc.util
+          - acc.house - acc.big - acc.debtInterest;
+        const hv = bought ? price * Math.pow(1 + p.houseGrowth / 100, (m - buyMonth) / 12) : 0;
+        const nw = deposit + fund + hv - debt - mortgageBal - instBal;
+        yearly.push({
+          year: m / 12, phase: ph, ...acc,
+          netFlow, deposit, fund, debt, mortgageBal, installments: instBal,
+          houseValue: hv, netWorth: nw, cashLike: liquid
+        });
+        years.push(m / 12);
+        netWorthArr.push(nw);
+        cashLikeArr.push(liquid);
+        houseArr.push(hv);
+        acc = zeroAcc();
+      }
+    }
+
+    const finalHouseValue = bought ? price * Math.pow(1 + p.houseGrowth / 100, (N - buyMonth) / 12) : 0;
+    const finalInst = events.reduce((s, e) => s + (e.bal > 0 ? e.bal : 0), 0);
+    const netHold = deposit + fund + finalHouseValue - debt - mortgageBal - finalInst;
+    const netSell = deposit + fund + finalHouseValue * (1 - p.sellCost / 100) - debt - mortgageBal - finalInst;
+
+    return {
+      years, netWorthArr, cashLikeArr, houseArr, yearly,
+      bought, buyMonth, price, down, taxes, mortgage0, mortgagePay, buyCost,
+      final: {
+        endAge: p.currentAge + p.horizon - 1,
+        deposit, fund, debt, mortgage: mortgageBal, installments: finalInst,
+        houseValue: finalHouseValue, netHold, netSell, peakLiability, minLiquid
+      },
+      totals: {
+        income: incomeTotal, social: socialTotal, fundPersonal: fundPersonalTotal, fundEmployer: fundEmployerTotal,
+        living: livingTotal, rent: rentTotal, mortgage: mortgagePaid, mortgageInterest,
+        pm: pmTotal, util: utilTotal, house: houseCostTotal, fundUsed: fundUsedForHouse,
+        bigDown: events.reduce((s, e) => s + e.downPaid, 0),
+        bigPayment: events.reduce((s, e) => s + e.paid, 0),
+        bigInterest: events.reduce((s, e) => s + e.interest, 0),
+        bigIncome: events.reduce((s, e) => s + e.income, 0),
+        bigSpend: events.reduce((s, e) => s + (e.amountY > 0 ? e.amountY : 0), 0),
+        depositInterest: depositInterestTotal, fundInterest: fundInterestTotal, debtInterest: debtInterestTotal
+      },
+      events
+    };
+  }
+
+  function render() {
+    const p = readInputs();
+    const bigs = readBigItems();
+    const res = simulate(p, bigs);
+    const rentOnly = p.buyHouse ? simulate({ ...p, buyHouse: false }, bigs) : null;
+    const f = res.final;
+    const endAge = f.endAge;
+
+    $('subtitle').textContent = `现年 ${p.currentAge} 岁 → 第 ${p.horizon} 年末 ${endAge} 岁｜当前存款 ${w(p.cash * 1e4)} 万、负债 ${w(p.debt * 1e4)} 万`;
+
+    const housingDesc = p.buyHouse
+      ? `第 ${p.buyYear} 年买房（总价 ${w(p.housePrice * 1e4)} 万，首付 ${p.downRatio}%，贷款 ${p.loanYears} 年）`
+      : '一直租房，不买房';
+    const bigDesc = res.events.filter(e => e.kind !== 'none').map(e => `${e.name}（第 ${e.year} 年）`).join('、');
+    const holdingLabel = p.buyHouse ? '继续持有自住房' : '不含房产';
+    const breakdown = `存款 ${w(f.deposit)} 万 + 公积金 ${w(f.fund)} 万`
+      + (p.buyHouse ? ` + 房产 ${w(f.houseValue)} 万` : '')
+      + ` − 负债 ${w(f.debt)} 万`
+      + (p.buyHouse ? ` − 房贷 ${w(f.mortgage)} 万` : '')
+      + ` − 分期 ${w(f.installments)} 万`;
+    const rentDiff = rentOnly ? f.netHold - rentOnly.final.netHold : 0;
+    const rentLine = rentOnly
+      ? `<br><span style="font-size:13px;color:#64748b">同样参数下不买房：净资产 ${w(rentOnly.final.netHold)} 万元；买房${rentDiff >= 0 ? '多' : '少'} ${w(Math.abs(rentDiff))} 万元（均按自住房估值计入）</span>`
+      : '';
+
+    $('verdict').innerHTML =
+      `${p.horizon} 年后（${endAge} 岁），预计净资产 <span class="num">${w(f.netHold)}</span> 万元（${holdingLabel}）。<br>` +
+      (res.bought ? `若期末卖房（扣 ${p.sellCost}% 交易成本），净得 <span class="num">${w(f.netSell)}</span> 万元。<br>` : '') +
+      `<span style="font-size:13px;color:#64748b">${breakdown}</span>` + rentLine +
+      `<br><span style="font-size:13px;color:#64748b">${housingDesc}${bigDesc ? `；大件：${bigDesc}` : ''}。</span>`;
+
+    const stats = [
+      ['当前年龄 / 期末年龄', `${p.currentAge} / ${endAge} 岁`],
+      ['当前存款', `${w(p.cash * 1e4)} 万元`],
+      ['当前负债', `${w(p.debt * 1e4)} 万元`],
+      ['期末存款', `${w(f.deposit)} 万元`],
+      ['期末公积金', `${w(f.fund)} 万元`],
+      ['期末负债（消费/透支）', `${w(f.debt)} 万元`],
+      ['期末房贷', `${w(f.mortgage)} 万元`],
+      ['期末大件分期', `${w(f.installments)} 万元`],
+      ['自住房期末估值', `${w(f.houseValue)} 万元`],
+      ['期末净资产（持有房产）', `${w(f.netHold)} 万元`],
+      ...(res.bought ? [['期末卖房净得', `${w(f.netSell)} 万元`]] : []),
+      ...(rentOnly ? [
+        ['不买房方案期末净资产', `${w(rentOnly.final.netHold)} 万元`],
+        ['买房 − 不买房', `${w(f.netHold - rentOnly.final.netHold)} 万元`]
+      ] : []),
+      ['社保累计个人缴纳', `${w(res.totals.social)} 万元`],
+      ['公积金累计（个人+单位）', `${w(res.totals.fundPersonal + res.totals.fundEmployer)} 万元`],
+      ['大件现金支出（含分期利息）', `${w(res.totals.bigDown + res.totals.bigPayment)} 万元`],
+      ['房贷利息合计', `${w(res.totals.mortgageInterest)} 万元`],
+      ['大件分期利息合计', `${w(res.totals.bigInterest)} 万元`],
+      ['周期内最大总负债', `${w(f.peakLiability)} 万元`],
+      ['周期内最低现金余额', `${w(f.minLiquid)} 万元`]
+    ];
+    $('stats').innerHTML = stats.map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
+
+    const assetRows = [
+      ['当前存款', p.cash * 1e4],
+      ['当前公积金余额', p.fundBalance * 1e4],
+      ['当前负债', p.debt * 1e4],
+      ['期末存款', f.deposit],
+      ['期末公积金', f.fund],
+      ['自住房期末估值', f.houseValue],
+      ['期末负债（消费/透支）', f.debt],
+      ['期末房贷', f.mortgage],
+      ['期末大件分期', f.installments],
+      ['期末净资产（继续持有房产）', f.netHold],
+      ...(res.bought ? [['期末卖房净得（扣交易成本）', f.netSell]] : [])
+    ];
+    $('assetTable').innerHTML = assetRows.map(([k, v]) => `<tr><td>${k}</td><td>${w(v)}</td></tr>`).join('');
+
+    const costRows = [
+      ['工资 / 养老金收入合计', res.totals.income],
+      ['社保个人缴纳合计', res.totals.social],
+      ['公积金个人缴纳合计', res.totals.fundPersonal],
+      ['公积金单位缴纳合计', res.totals.fundEmployer],
+      ['生活开销合计', res.totals.living],
+      ['房租合计', res.totals.rent],
+      ['房贷月供合计', res.totals.mortgage],
+      ['其中房贷利息', res.totals.mortgageInterest],
+      ['物业费合计', res.totals.pm],
+      ['水电燃气取暖合计', res.totals.util],
+      ['购房首付 + 税费', res.totals.house],
+      ['其中使用公积金余额', res.totals.fundUsed],
+      ['大件首付 / 一次付清合计', res.totals.bigDown],
+      ['大件分期还款合计', res.totals.bigPayment],
+      ['其中大件分期利息', res.totals.bigInterest],
+      ['大件负值收入合计', res.totals.bigIncome],
+      ['存款利息合计', res.totals.depositInterest],
+      ['公积金利息合计', res.totals.fundInterest],
+      ['负债利息合计', res.totals.debtInterest]
+    ];
+    $('costTable').innerHTML = costRows.map(([k, v]) => `<tr><td>${k}</td><td>${w(v)}</td></tr>`).join('');
+
+    const activeEvents = res.events.filter(e => e.kind !== 'none');
+    if (!activeEvents.length) {
+      $('bigTable').innerHTML = '<p class="note">暂无大件支出。</p>';
+    } else {
+      const rows = activeEvents.map(e => {
+        let type, amount, down, loan, pay, interest;
+        if (e.kind === 'income') {
+          type = '一次性收入'; amount = -e.amountY; down = 0; loan = 0; pay = 0; interest = 0;
+        } else if (e.kind === 'once') {
+          type = '一次付清'; amount = e.amountY; down = e.amountY; loan = 0; pay = 0; interest = 0;
+        } else {
+          type = '分期'; amount = e.amountY; down = e.down; loan = e.loan; pay = e.pay; interest = e.interest;
+        }
+        return `<tr><td>${esc(e.name)}</td><td>${e.year}</td><td>${type}</td><td>${w(amount)}</td><td>${w(down)}</td><td>${w(loan)}</td><td>${yuan(pay)}</td><td>${w(interest)}</td></tr>`;
+      }).join('');
+      $('bigTable').innerHTML = `<div class="scroll"><table class="yt"><thead><tr><th>名称</th><th>年份</th><th>方式</th><th>金额</th><th>首付/一次付清</th><th>贷款</th><th>月供（元）</th><th>利息</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+
+    const h = ['年', '年龄', '阶段', '收入', '社保', '公积金个人', '公积金单位', '生活', '房租', '房贷', '物业', '水电', '大件', '购房', '利息收入', '公积金利息', '负债利息', '年度现金流', '年末存款', '年末公积金', '年末负债', '房贷余额', '分期余额', '房产估值', '净资产'];
+    const isSwitchYear = r => (p.p2StartAge > 0 && r.year === ageToYear(p.p2StartAge, p)) || (p.p3StartAge > 0 && r.year === ageToYear(p.p3StartAge, p));
+    const isBuyYear = r => res.bought && r.year === p.buyYear;
+    const rowStyle = r => isBuyYear(r)
+      ? ' style="background:#edfbf8;font-weight:600"'
+      : isSwitchYear(r) ? ' style="background:#fff7e6;font-weight:600"' : '';
+    const row = r => `<tr${rowStyle(r)}><td>${r.year}</td><td>${p.currentAge + r.year - 1}</td><td>${PHASE_LABEL[r.phase]}</td><td>${yuan(r.income)}</td><td>${yuan(r.social)}</td><td>${yuan(r.fundPersonal)}</td><td>${yuan(r.fundEmployer)}</td><td>${yuan(r.living)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.mortgage)}</td><td>${yuan(r.pm)}</td><td>${yuan(r.util)}</td><td>${yuan(r.big)}</td><td>${yuan(r.house)}</td><td>${yuan(r.interestIn)}</td><td>${yuan(r.fundInterest)}</td><td>${yuan(r.debtInterest)}</td><td>${yuan(r.netFlow)}</td><td>${yuan(r.deposit)}</td><td>${yuan(r.fund)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.mortgageBal)}</td><td>${yuan(r.installments)}</td><td>${yuan(r.houseValue)}</td><td>${yuan(r.netWorth)}</td></tr>`;
+    $('yearTable').innerHTML = `<thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${res.yearly.map(row).join('')}</tbody>`;
+
+    if (!chart) return;
+    const markLines = [];
+    const addMarkLine = (year, label, color, type) => {
+      if (year >= 1 && year <= p.horizon) {
+        markLines.push({
+          xAxis: year + '年',
+          label: { formatter: label, position: 'insideEndTop', fontSize: 10, color },
+          lineStyle: { color, type, width: 1 }
+        });
+      }
+    };
+    if (res.bought) addMarkLine(p.buyYear, `第${p.buyYear}年买房`, '#0f9d8a', 'dashed');
+    if (p.p2StartAge > 0) addMarkLine(ageToYear(p.p2StartAge, p), p.p2StartAge + '岁退休', '#d48806', 'dotted');
+    if (p.p3StartAge > 0) addMarkLine(ageToYear(p.p3StartAge, p), p.p3StartAge + '岁领养老金', '#389e0d', 'dotted');
+    res.events.filter(e => e.kind !== 'none').slice(0, 5).forEach(e => addMarkLine(e.year, e.name, '#94a3b8', 'dotted'));
+
+    const series = [
+      {
+        name: '净资产（含房产）', type: 'line', smooth: true, color: '#0f9d8a',
+        data: res.netWorthArr,
+        ...(markLines.length ? { markLine: { silent: true, symbol: 'none', data: markLines } } : {})
+      },
+      { name: '现金+公积金−消费负债', type: 'line', smooth: true, color: '#fa8c16', data: res.cashLikeArr }
+    ];
+    if (p.buyHouse) series.push({ name: '自住房估值', type: 'line', smooth: true, color: '#1677ff', data: res.houseArr });
+
+    chart.setOption({
+      tooltip: { trigger: 'axis', valueFormatter: v => w(v) + ' 万' },
+      legend: { top: 0, data: series.map(s => s.name) },
+      grid: { left: 70, right: 24, top: 56, bottom: 36 },
+      xAxis: {
+        type: 'category',
+        data: res.years.map(y => y + '年'),
+        boundaryGap: false,
+        axisLabel: {
+          interval: i => i === 0 || i % 10 === 0,
+          formatter: (v, i) => i === 0 ? `0年/${p.currentAge}岁` : `${i}年/${p.currentAge + i - 1}岁`,
+          fontSize: 10
+        }
+      },
+      yAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e4).toFixed(0) + '万' } },
+      series
+    }, true);
+  }
+
+  // 大件支出动态列表
+  $('bigList').addEventListener('input', e => {
+    const row = e.target.closest('.big-row');
+    const field = e.target.dataset.field;
+    if (!row || !field) return;
+    const idx = +row.dataset.idx;
+    if (field === 'name') {
+      bigItems[idx].name = e.target.value;
+      render();
+      return;
+    }
+    const raw = parseFloat(e.target.value);
+    if (!isFinite(raw)) return;
+    const lim = BIG_LIMITS[field];
+    let v = clamp(raw, lim[0], lim[1]);
+    if (field === 'year' || field === 'years') v = Math.round(v);
+    bigItems[idx][field] = v;
+    if (v !== raw) e.target.value = String(v);
+    render();
+  });
+  $('bigList').addEventListener('click', e => {
+    const btn = e.target.closest('[data-del]');
+    if (!btn) return;
+    bigItems.splice(+btn.dataset.del, 1);
+    renderBigList();
+    render();
+  });
+  $('addBig').addEventListener('click', () => {
+    bigItems.push({ name: `大件 ${bigItems.length + 1}`, amount: 5, year: 10, downRatio: 0, years: 0, rate: 0 });
+    renderBigList();
+    render();
+  });
+
+  renderBigList();
+  Object.keys(DEFAULTS).forEach(k => {
+    const el = $(k);
+    if (el.type === 'checkbox') {
+      el.checked = DEFAULTS[k];
+      el.addEventListener('change', render);
+    } else {
+      el.value = DEFAULTS[k];
+      el.addEventListener('input', render);
+    }
+  });
+  $('resetBtn').addEventListener('click', () => {
+    Object.keys(DEFAULTS).forEach(k => {
+      const el = $(k);
+      if (el.type === 'checkbox') el.checked = DEFAULTS[k];
+      else el.value = DEFAULTS[k];
+    });
+    bigItems = BIG_DEFAULTS.map(x => ({ ...x }));
+    renderBigList();
+    render();
+  });
+
+  window.addEventListener('resize', () => chart && chart.resize());
+  render();
+</script>
+</body>
+</html>
