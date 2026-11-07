@@ -39,6 +39,13 @@
   .phase .field { padding: 6px 0; }
   .phase .field label { font-size: 12px; color: #64748b; }
   .phase .field input { width: 104px; padding: 5px 8px; font-size: 13px; }
+  .reset { width: 100%; margin-top: 12px; padding: 9px; border: 1px solid #d6dde8; background: #fff; color: #64748b; border-radius: 10px; font-size: 13px; cursor: pointer; }
+  .reset:hover { border-color: #1677ff; color: #1677ff; }
+  @media (min-width: 861px) {
+    aside { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; padding-right: 4px; }
+    aside::-webkit-scrollbar { width: 6px; }
+    aside::-webkit-scrollbar-thumb { background: #d6dde8; border-radius: 3px; }
+  }
   .mode { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
   .mode p { font-size: 13px; color: #64748b; margin-top: 4px; }
   .mode button { padding: 10px 16px; border: none; border-radius: 10px; background: #1677ff; color: #fff; font-size: 14px; cursor: pointer; }
@@ -131,6 +138,8 @@
         </div>
       </div>
     </div>
+
+    <button class="reset" id="resetBtn" type="button">恢复默认参数</button>
   </aside>
 
   <main>
@@ -229,23 +238,23 @@
   function readInputs() {
     const p = {};
     for (const k in DEFAULTS) {
-      let v = parseFloat($(k).value);
-      if (!isFinite(v)) v = DEFAULTS[k];
+      const el = $(k);
+      const raw = parseFloat(el.value);
+      const v = isFinite(raw) ? raw : DEFAULTS[k];
       const [lo, hi] = LIMITS[k];
-      p[k] = Math.min(hi, Math.max(lo, v));
+      const clamped = Math.min(hi, Math.max(lo, v));
+      p[k] = clamped;
+      // 越界值立即回写；空输入或输入到一半时保持原样，避免打断
+      if (isFinite(raw) && clamped !== raw) el.value = String(clamped);
     }
-    p.loanYears = Math.round(p.loanYears);
-    p.decorYears = Math.round(p.decorYears);
-    p.tempMonths = Math.round(p.tempMonths);
-    p.renovYear = Math.round(p.renovYear);
+    // 整数项四舍五入后回写，避免"框里写小数、模型按整数算"
+    ['loanYears', 'decorYears', 'tempMonths', 'renovYear', 'buyYear', 'currentAge', 'p1StartAge', 'p2StartAge', 'p3StartAge'].forEach(k => {
+      p[k] = Math.round(p[k]);
+      const el = $(k);
+      const shown = parseFloat(el.value);
+      if (isFinite(shown) && shown !== p[k]) el.value = String(p[k]);
+    });
     p.horizon = HORIZON;
-    p.buyYear = Math.round(p.buyYear);
-    p.currentAge = Math.round(p.currentAge);
-    p.p1StartAge = Math.round(p.p1StartAge);
-    p.p2StartAge = Math.round(p.p2StartAge);
-    p.p3StartAge = Math.round(p.p3StartAge);
-    // 购房年份越界时回写输入框，避免"框里写着 999、模型按 60 算"
-    if (parseFloat($('buyYear').value) !== p.buyYear) $('buyYear').value = p.buyYear;
     return p;
   }
 
@@ -402,10 +411,33 @@
     const p1On = ageInRange(p.p1StartAge);
     const p2On = ageInRange(p.p2StartAge);
     const p3On = ageInRange(p.p3StartAge);
-    const surplusOf = ph => ({
-      buyer: phaseIncome(ph) - pay - p.pmFee - p.utilities - phaseLiving(ph) - decorPay,
-      renter: phaseIncome(ph) - p.rent - p.utilities - phaseLiving(ph)
-    });
+    // 阶段起止月：阶段1 可能从对比起点之前开始，钳制到第 1 个月
+    const phaseStartM = age => Math.max(1, ageToMonth(age));
+    const p1S = phaseStartM(p.p1StartAge);
+    const p2S = p.p2StartAge > 0 ? phaseStartM(p.p2StartAge) : Infinity;
+    const p3S = p.p3StartAge > 0 ? phaseStartM(p.p3StartAge) : Infinity;
+    const p1E = Math.min(p2S, p3S, N + 1) - 1;
+    const p2E = Math.min(p3S, N + 1) - 1;
+    const loanEndM = buyMonth + loanN;
+    const decorEndM = buyMonth + decorN;
+    // 取"阶段开始、且已购房"的那个月作为代表：贷款/装修在不在还，按这个月判断。
+    // 若整个阶段都在购房前，买房者与租房者收支相同。
+    const surplusOf = (ph, s, e) => {
+      if (!isFinite(s) || s > N || e < s) return null;
+      const rep = Math.max(s, buyMonth + 1);
+      const beforeBuy = rep > e;
+      const loanActive = !beforeBuy && rep <= loanEndM;
+      const decorActive = !beforeBuy && rep <= decorEndM;
+      const income = phaseIncome(ph);
+      const living = phaseLiving(ph);
+      return {
+        buyerBeforeBuy: beforeBuy,
+        loanActive, decorActive,
+        buyer: beforeBuy ? null
+          : income - (loanActive ? pay : 0) - p.pmFee - p.utilities - living - (decorActive ? decorPay : 0),
+        renter: income - p.rent - p.utilities - living
+      };
+    };
 
     return {
       years, buyer, renter, diff, cross, yearlyB, yearlyR,
@@ -427,9 +459,9 @@
       p3Year: p.p3StartAge > 0 ? ageToYear(p.p3StartAge) : null,
       pension: p.pension,
       // 各阶段月结余
-      surplusP1: surplusOf(0),
-      surplusP2: surplusOf(1),
-      surplusP3: surplusOf(2),
+      surplusP1: surplusOf(0, p1S, p1E),
+      surplusP2: surplusOf(1, p2S, p2E),
+      surplusP3: surplusOf(2, p3S, N),
       preRent: sum(yearlyB, 'rent'),
       tempTotal: sum(yearlyB, 'temp'),
       payTotal: sum(yearlyB, 'mortgage'),
@@ -489,6 +521,19 @@
         (keepHouse ? `<br><span style="font-size:13px;color:#64748b">不卖房：房产估值 ${w(p.futurePrice * 1e4)} 万元未计入现金</span>` : '');
     }
 
+    const phaseStatRows = (label, s) => {
+      if (!s) return [];
+      const suffix = s.buyerBeforeBuy ? '（购房前，与租房相同）'
+        : s.loanActive && s.decorActive ? '（还贷+装修分期中）'
+        : s.loanActive ? '（还贷中）'
+        : s.decorActive ? '（装修分期中）'
+        : '（已还清）';
+      const buyerVal = s.buyer === null ? s.renter : s.buyer;
+      return [
+        [`${label} 买房月结余${suffix}`, `${yuan(buyerVal)} 元`],
+        [`${label} 租房月结余`, `${yuan(s.renter)} 元`]
+      ];
+    };
     const stats = [
       ['每月月供（购房后）', `${yuan(res.pay)} 元`],
       ['购房所需（首付+税费）', `${w(res.threshold)} 万元`],
@@ -497,19 +542,16 @@
       ...(res.p1On ? [
         ['阶段1 开始工作年龄', `${p.p1StartAge} 岁`],
         ['阶段1 工作月收入', `${yuan(p.income)} 元`],
-        ['阶段1 买房月结余', `${yuan(res.surplusP1.buyer)} 元`],
-        ['阶段1 租房月结余', `${yuan(res.surplusP1.renter)} 元`]
+        ...phaseStatRows('阶段1', res.surplusP1)
       ] : []),
       ...(res.p2On ? [
         ['阶段2 提前退休年龄', `${p.p2StartAge} 岁（第 ${res.p2Year} 年）`],
-        ['阶段2 买房月结余', `${yuan(res.surplusP2.buyer)} 元`],
-        ['阶段2 租房月结余', `${yuan(res.surplusP2.renter)} 元`]
+        ...phaseStatRows('阶段2', res.surplusP2)
       ] : []),
       ...(res.p3On ? [
         ['阶段3 领养老金年龄', `${p.p3StartAge} 岁（第 ${res.p3Year} 年）`],
         ['阶段3 每月养老金', `${yuan(p.pension)} 元`],
-        ['阶段3 买房月结余', `${yuan(res.surplusP3.buyer)} 元`],
-        ['阶段3 租房月结余', `${yuan(res.surplusP3.renter)} 元`]
+        ...phaseStatRows('阶段3', res.surplusP3)
       ] : []),
       ['买房/租房交叉点', res.cross ? `第 ${res.cross} 年` : '无交叉'],
       ['购房当年末负债', `${w(res.debtAtBuy)} 万元`],
@@ -617,6 +659,11 @@
   Object.keys(DEFAULTS).forEach(k => {
     $(k).value = DEFAULTS[k];
     $(k).addEventListener('input', render);
+  });
+  $('resetBtn').addEventListener('click', () => {
+    Object.keys(DEFAULTS).forEach(k => { $(k).value = DEFAULTS[k]; });
+    keepHouse = true;
+    render();
   });
   $('modeBtn').addEventListener('click', () => {
     keepHouse = !keepHouse;

@@ -29,6 +29,25 @@
   .fixed { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e5e9f0; }
   .fixed span { font-size: 13px; color: #475569; }
   .fixed b { font-size: 14px; color: #7a3ff2; }
+  /* 三阶段分组 */
+  .phases { border: 1px solid #e5e9f0; border-radius: 12px; padding: 4px 12px 10px; margin-top: 10px; background: #fbfcfe; }
+  .phase { border-top: 1px solid #eef2f7; padding: 6px 0 4px; }
+  .phase:first-of-type { border-top: none; }
+  .phase h4 { font-size: 13px; font-weight: 600; color: #334155; margin: 6px 0 2px; display: flex; align-items: center; gap: 6px; }
+  .phase h4 .tag { font-size: 11px; font-weight: 500; color: #fff; background: #7a3ff2; border-radius: 4px; padding: 1px 6px; }
+  .phase.p2 h4 .tag { background: #d48806; }
+  .phase.p3 h4 .tag { background: #389e0d; }
+  .phase p { font-size: 11px; color: #94a3b8; margin: 0 0 4px; line-height: 1.6; }
+  .phase .field { padding: 6px 0; }
+  .phase .field label { font-size: 12px; color: #64748b; }
+  .phase .field input { width: 104px; padding: 5px 8px; font-size: 13px; }
+  .reset { width: 100%; margin-top: 12px; padding: 9px; border: 1px solid #d6dde8; background: #fff; color: #64748b; border-radius: 10px; font-size: 13px; cursor: pointer; }
+  .reset:hover { border-color: #7a3ff2; color: #7a3ff2; }
+  @media (min-width: 901px) {
+    aside { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; padding-right: 4px; }
+    aside::-webkit-scrollbar { width: 6px; }
+    aside::-webkit-scrollbar-thumb { background: #d6dde8; border-radius: 3px; }
+  }
   .verdict { background: linear-gradient(135deg, #f5f0ff, #fbf9ff); border-radius: 14px; padding: 22px 18px; text-align: center; font-size: 17px; line-height: 2; font-weight: 600; }
   .num { color: #7a3ff2; font-size: 25px; font-weight: 700; }
   .pos { color: #e5484d; }
@@ -74,7 +93,7 @@
 <body>
 <header>
   <h1>卖房 vs 留房 决策计算器</h1>
-  <p>已有房主：卖掉换现金，还是留着继续还贷 —— 比较 60 年后的手上现金</p>
+  <p id="subtitle">已有房主：卖掉换现金，还是留着继续还贷 —— 比较 60 年后的手上现金</p>
 </header>
 
 <nav class="nav">
@@ -113,14 +132,37 @@
     </div>
 
     <div class="card">
-      <h2>共同项</h2>
+      <h2>个人与三阶段参数</h2>
       <div class="fixed"><span>对比周期</span><b>60 年（固定）</b></div>
-      <div class="field"><label>个人月收入（元）</label><input id="income" type="number" step="500"></div>
-      <div class="field"><label>退休时间（第几年起）</label><input id="retireYears" type="number" step="1"></div>
-      <div class="field"><label>每月退休工资（元）</label><input id="pension" type="number" step="100"></div>
-      <div class="field"><label>每月其他生活开销（元）</label><input id="living" type="number" step="100"></div>
       <div class="field"><label>每月水电燃气取暖（元）</label><input id="utilities" type="number" step="10"></div>
       <div class="field"><label>存款年化利率（%）</label><input id="invRate" type="number" step="0.1"></div>
+      <div class="field"><label>当前年龄（岁）</label><input id="currentAge" type="number" step="1"></div>
+
+      <div class="phases">
+        <div class="phase p1">
+          <h4><span class="tag">阶段 1</span>工作期</h4>
+          <p>有工资收入，没有养老金。</p>
+          <div class="field"><label>开始工作年龄（岁）</label><input id="p1StartAge" type="number" step="1"></div>
+          <div class="field"><label>每月工作收入（元）</label><input id="income" type="number" step="500"></div>
+          <div class="field"><label>每月其他生活开销（元）</label><input id="living1" type="number" step="100"></div>
+        </div>
+
+        <div class="phase p2">
+          <h4><span class="tag">阶段 2</span>提前退休（无工资无养老金）</h4>
+          <p>工作结束、还没到领养老金年龄：没有工资也没有养老金，生活开销全部从已有存款里扣（靠利息和吃老本），存款不够就变负债。</p>
+          <div class="field"><label>提前退休年龄（岁，0 = 不启用）</label><input id="p2StartAge" type="number" step="1"></div>
+          <div class="field"><label>每月其他生活开销（元）</label><input id="living2" type="number" step="100"></div>
+        </div>
+
+        <div class="phase p3">
+          <h4><span class="tag">阶段 3</span>领养老金</h4>
+          <p>到龄开始领养老金，一直领到期末。</p>
+          <div class="field"><label>领养老金年龄（岁，0 = 不启用）</label><input id="p3StartAge" type="number" step="1"></div>
+          <div class="field"><label>每月养老金（元）</label><input id="pension" type="number" step="100"></div>
+          <div class="field"><label>每月其他生活开销（元）</label><input id="living3" type="number" step="100"></div>
+        </div>
+      </div>
+      <p class="note">阶段用年龄表示：当前年龄对应第 1 年，所以第 A 岁落在第 (A − 当前年龄 + 1) 年。年龄填 0 表示该阶段不启用，阶段 2/3 未启用时上一个阶段一直持续到期末。</p>
     </div>
 
     <div class="card">
@@ -130,6 +172,8 @@
       <div class="field"><label>自己另租的月租金（元）</label><input id="selfRentC" type="number" step="100"></div>
       <p class="note">房子租出去后自己另租小房住。物业费与维修预留仍由你承担；出租收入按空置率打折。</p>
     </div>
+
+    <button class="reset" id="resetBtn" type="button">恢复默认参数</button>
   </aside>
 
   <main>
@@ -148,7 +192,7 @@
         <li><b>未来翻新与装修费用未计入</b>：没有按年份预提翻新支出。房子住久了要重新装修，这笔钱在 60 年里不会少。</li>
         <li><b>房屋使用寿命未考虑</b>：默认这套房子可以一直持有，没有考虑房龄折价、自然老化、拆迁或产权到期等变化。</li>
         <li><b>房价不预测</b>：模型不设未来房价。留房路径的房产按当前市值作参考，60 年后值多少未知。</li>
-        <li><b>退休后的消费变化未计入</b>：退休后仍按现在的生活开销计算，没有考虑消费习惯改变、医疗养老支出增加，也没有社保养老金调整与通货膨胀。</li>
+        <li><b>退休后的消费变化只做了三阶段粗分</b>：工作期、提前退休期、领养老金期各用一个固定的"每月其他生活开销"，没有考虑医疗、养老机构等大额支出，也没有随年龄增长或通货膨胀调整。</li>
       </ul>
     </div>
 
@@ -196,6 +240,10 @@
     <p>说明：对比期末三条路径都不卖房，指标是手上的现金。留房路径仍持有的房产与剩余贷款都不计入现金，仅在路径卡里作为参考显示。</p>
     <p>说明：模型不预测未来房价。留房路径的房产按当前市值作参考，若按当前市值卖出能净剩多少会一并列出，但那是"假设现在就卖"，不是 60 年后的价值。</p>
     <p>提醒：房屋维修费用、未来翻新与装修费用、房屋使用寿命与房龄折价都未计入计算，详见上方"未计入的因素"。</p>
+    <p>提示：个人收入按三个阶段建模——① 工作期（有工资）；② 提前退休期（无工资无养老金，生活开销全部从存款里扣）；③ 领养老金期（有养老金无工资）。三个阶段各自填一份"每月其他生活开销"，年龄填 0 表示该阶段不启用。</p>
+    <p>提示：阶段用年龄表示，「当前年龄」对应第 1 年，所以第 A 岁落在第 (A − 当前年龄 + 1) 年。默认当前 30 岁、55 岁提前退休、65 岁领养老金，分别对应第 1 年、第 26 年、第 36 年；第 60 年末为 89 岁。</p>
+    <p>提示：提前退休期没有工资也没有养老金，开销花的就是存款本身（先吃利息，再吃本金），存款不够就记为透支欠款，没有额外的"理财提取"。</p>
+    <p>提示：养老金不随时间增长，也未计入社保调整与通货膨胀。三阶段划分对 A/B/C 三条路径是同一个人的共同事件。</p>
     <p>提示：卖房交易成本按增值税、个税、中介费分别估算，实际以当地政策为准。</p>
   </div>
 </footer>
@@ -209,7 +257,13 @@
     value: 100, origPrice: 160, downRatio: 30, rate: 2.85, payMethod: 'acpi',
     loanPaidYears: 4, loanYearsLeft: 26, pmFee: 200,
     vat: 1.5, incomeTax: 0, agency: 1, rentAfter: 1200, depositMonths: 2, moveCost: 1000,
-    income: 8000, retireYears: 35, pension: 3000, living: 2000, utilities: 300, invRate: 1.3,
+    utilities: 300, invRate: 1.3, currentAge: 30,
+    // 阶段 1：工作期
+    p1StartAge: 30, income: 8000, living1: 2000,
+    // 阶段 2：提前退休（无工资无养老金）
+    p2StartAge: 55, living2: 2000,
+    // 阶段 3：领养老金
+    p3StartAge: 65, pension: 3000, living3: 2000,
     rentOut: 2500, vacancy: 10, selfRentC: 1200
   };
 
@@ -219,8 +273,10 @@
     pmFee: [0, 1e5],
     vat: [0, 20], incomeTax: [0, 20], agency: [0, 10], rentAfter: [0, 1e6],
     depositMonths: [0, 12], moveCost: [0, 1e6],
-    income: [0, 1e7], retireYears: [0, 60], pension: [0, 1e6],
-    living: [0, 1e6], utilities: [0, 1e5], invRate: [-10, 30],
+    utilities: [0, 1e5], invRate: [-10, 30], currentAge: [1, 100],
+    p1StartAge: [0, 120], income: [0, 1e7], living1: [0, 1e6],
+    p2StartAge: [0, 120], living2: [0, 1e6],
+    p3StartAge: [0, 120], pension: [0, 1e6], living3: [0, 1e6],
     rentOut: [0, 1e6], vacancy: [0, 100], selfRentC: [0, 1e6]
   };
 
@@ -234,17 +290,69 @@
     { key: 'C', name: 'C 留房出租' }
   ];
 
+  const PHASE_LABEL = ['① 工作', '② 提前退休', '③ 领养老金'];
+
+  /* ---- 三阶段模型（与 index.html 同一套口径） ----
+     阶段 1 工作期：   有工资，无养老金
+     阶段 2 提前退休： 无工资无养老金，开销全部从存款里扣
+     阶段 3 领养老金： 有养老金无工资
+     阶段用年龄表示：当前年龄 currentAge 对应第 1 年，
+     第 A 岁落在第 (A - currentAge + 1) 年，起始月 = (A - currentAge) * 12 + 1。
+     阶段年龄填 0 表示该阶段不启用；阶段 2/3 未启用时上一阶段持续到期末。 */
+  const ageToYear = (age, p) => age - p.currentAge + 1;
+  const ageToMonth = (age, p) => (age - p.currentAge) * 12 + 1;
+
+  function phaseBounds(p) {
+    const N = p.horizon * 12;
+    return [
+      {
+        label: '阶段 1 工作期', age: p.p1StartAge, income: p.income, living: p.living1,
+        start: Math.max(1, ageToMonth(p.p1StartAge, p)),
+        end: Math.min(p.p2StartAge > 0 ? ageToMonth(p.p2StartAge, p) : Infinity,
+          p.p3StartAge > 0 ? ageToMonth(p.p3StartAge, p) : Infinity, N + 1) - 1
+      },
+      {
+        label: '阶段 2 提前退休', age: p.p2StartAge, income: 0, living: p.living2,
+        start: p.p2StartAge > 0 ? ageToMonth(p.p2StartAge, p) : Infinity,
+        end: Math.min(p.p3StartAge > 0 ? ageToMonth(p.p3StartAge, p) : Infinity, N + 1) - 1
+      },
+      {
+        label: '阶段 3 领养老金', age: p.p3StartAge, income: p.pension, living: p.living3,
+        start: p.p3StartAge > 0 ? ageToMonth(p.p3StartAge, p) : Infinity,
+        end: N
+      }
+    ];
+  }
+
+  const phaseOfMonth = (m, p) => {
+    if (p.p3StartAge > 0 && m >= ageToMonth(p.p3StartAge, p)) return 2;
+    if (p.p2StartAge > 0 && m >= ageToMonth(p.p2StartAge, p)) return 1;
+    return 0;
+  };
+  const phaseIncome = (ph, p) => ph === 2 ? p.pension : (ph === 0 ? p.income : 0);
+  const phaseLiving = (ph, p) => ph === 2 ? p.living3 : (ph === 1 ? p.living2 : p.living1);
+  const isWorking = (m, p) => m >= ageToMonth(p.p1StartAge, p);
+
   function readInputs() {
     const p = { horizon: HORIZON };
     for (const k in DEFAULTS) {
       const el = $(k);
       if (el.tagName === 'SELECT') { p[k] = el.value; continue; }
-      let v = parseFloat(el.value);
-      if (!isFinite(v)) v = DEFAULTS[k];
+      const raw = parseFloat(el.value);
+      const v = isFinite(raw) ? raw : DEFAULTS[k];
       const lim = LIMITS[k];
-      p[k] = lim ? Math.min(lim[1], Math.max(lim[0], v)) : v;
+      const clamped = lim ? Math.min(lim[1], Math.max(lim[0], v)) : v;
+      p[k] = clamped;
+      // 越界值立即回写；空输入或输入到一半时保持原样，避免打断
+      if (isFinite(raw) && clamped !== raw) el.value = String(clamped);
     }
-    ['loanPaidYears', 'loanYearsLeft', 'retireYears'].forEach(k => p[k] = Math.round(p[k]));
+    // 整数项四舍五入后回写，避免"框里写小数、模型按整数算"
+    ['loanPaidYears', 'loanYearsLeft', 'currentAge', 'p1StartAge', 'p2StartAge', 'p3StartAge'].forEach(k => {
+      p[k] = Math.round(p[k]);
+      const el = $(k);
+      const shown = parseFloat(el.value);
+      if (isFinite(shown) && shown !== p[k]) el.value = String(p[k]);
+    });
 
     // 推算：原始首付 → 原始贷款 → 月供 → 剩余本金 → 已还本金
     p.origDown = p.origPrice * p.downRatio / 100;
@@ -257,7 +365,6 @@
       // 等额本金：每月还本固定 = 原始贷款 ÷ 总期数，剩余本金 = 原始贷款 × (1 − 已还期数 ÷ 总期数)
       p.monthlyPrincipal = nTotal > 0 ? origLoan / nTotal : 0;
       remain = nTotal > 0 ? origLoan * (1 - k / nTotal) : 0;
-      p.monthlyPay = p.monthlyPrincipal + origLoan * r;
     } else {
       // 等额本息：月供固定，余额按复利滚动
       const M = payOf(origLoan, r, nTotal);
@@ -265,7 +372,6 @@
       remain = origLoan <= 0 ? 0
         : r === 0 ? origLoan - M * k
         : Math.max(0, origLoan * grow - M * (grow - 1) / r);
-      p.monthlyPay = M;
     }
     p.origLoan = origLoan;
     p.loanBal = Math.max(0, remain) / 1e4;
@@ -295,7 +401,6 @@
     const rent = p.rentAfter;
     const deposit = (path === 'C' ? p.selfRentC : rent) * p.depositMonths;
     const rentIn = p.rentOut * (1 - p.vacancy / 100);
-    const retireM = p.retireYears * 12;
 
     let cash = 0, debt = 0, loanBal = 0, pay = 0, loanN = 0, owned = false;
     let saleNet = 0;
@@ -317,27 +422,29 @@
       cash *= 1 + i;
 
       let flow = 0;
-      const incomeNow = m > retireM ? p.pension : p.income;
+      const ph = phaseOfMonth(m, p);
+      const incomeNow = isWorking(m, p) ? phaseIncome(ph, p) : 0;
+      const livingNow = isWorking(m, p) ? phaseLiving(ph, p) : 0;
       if (path === 'A') {
-        flow = incomeNow - rent - p.utilities - p.living;
+        flow = incomeNow - rent - p.utilities - livingNow;
         acc.rent += rent;
         if (m === 1) { flow -= p.moveCost + deposit; acc.other += p.moveCost + deposit; }
       } else if (path === 'B') {
         const paying = m <= loanN;
         const payNow = p.payMethod === 'acp' ? p.monthlyPrincipal + loanBal * r : pay;
         if (paying) { loanBal = Math.max(0, loanBal * (1 + r) - payNow); acc.mortgage += payNow; }
-        flow = incomeNow - (paying ? payNow : 0) - p.pmFee - p.utilities - p.living;
+        flow = incomeNow - (paying ? payNow : 0) - p.pmFee - p.utilities - livingNow;
         acc.pm += p.pmFee;
       } else {
         const paying = m <= loanN;
         const payNow = p.payMethod === 'acp' ? p.monthlyPrincipal + loanBal * r : pay;
         if (paying) { loanBal = Math.max(0, loanBal * (1 + r) - payNow); acc.mortgage += payNow; }
-        flow = incomeNow + rentIn - (paying ? payNow : 0) - p.pmFee - p.selfRentC - p.utilities - p.living;
+        flow = incomeNow + rentIn - (paying ? payNow : 0) - p.pmFee - p.selfRentC - p.utilities - livingNow;
         acc.pm += p.pmFee; acc.rentOut += rentIn; acc.rent += p.selfRentC;
         if (m === 1) { flow -= deposit; acc.other += deposit; }
       }
 
-      acc.income += incomeNow; acc.util += p.utilities; acc.living += p.living;
+      acc.income += incomeNow; acc.util += p.utilities; acc.living += livingNow;
 
       [cash, debt] = addCash(cash, debt, flow);
 
@@ -350,7 +457,7 @@
         const out = acc.rent + acc.mortgage + acc.pm + acc.util + acc.living + acc.other;
         const net = acc.income + acc.rentOut + acc.interest - out;
         yearly.push({
-          year: m / 12, ...acc, out, net,
+          year: m / 12, phase: ph, ...acc, out, net,
           deposit: cash, debt, loan: owned ? loanBal : 0,
           cash: cash - debt
         });
@@ -407,7 +514,7 @@
 
   function crossYear(a, b) {
     for (let k = 1; k < a.length; k++) {
-      if ((a[k - 1].cash - b[k - 1].cash >= 0) !== (a[k].cash - b[k].cash >= 0)) return k;
+      if ((a[k - 1].cash - b[k - 1].cash >= 0) !== (a[k].cash - b[k].cash >= 0)) return a[k].year;
     }
     return null;
   }
@@ -445,6 +552,16 @@
 
     const loan = loanSummary(p);
     const rentIn = p.rentOut * (1 - p.vacancy / 100);
+    const endAge = p.currentAge + p.horizon - 1;
+    const p2Year = p.p2StartAge > 0 ? ageToYear(p.p2StartAge, p) : null;
+    const p3Year = p.p3StartAge > 0 ? ageToYear(p.p3StartAge, p) : null;
+    const phaseLine = (age, extra, zeroLabel) => {
+      if (age <= 0) return zeroLabel || '不启用';
+      const y = ageToYear(age, p);
+      const pos = y < 1 ? '对比开始时已在此阶段' : y > p.horizon ? '超出 60 年' : `第 ${y} 年`;
+      return `${age} 岁（${pos}）${extra || ''}`;
+    };
+
     const monthly = [
       ['月收入', p.income, p.income, p.income],
       ['租金', -p.rentAfter, 0, -p.selfRentC],
@@ -452,28 +569,39 @@
       ['房贷月供', 0, -loan.firstPayment, -loan.firstPayment],
       ['物业费', 0, -p.pmFee, -p.pmFee],
       ['水电燃气取暖', -p.utilities, -p.utilities, -p.utilities],
-      ['生活开销', -p.living, -p.living, -p.living]
+      ['生活开销', -p.living1, -p.living1, -p.living1]
     ];
     const sums = { A: 0, B: 0, C: 0 };
     monthly.forEach(r => { sums.A += r[1]; sums.B += r[2]; sums.C += r[3]; });
-    const after = {
-      A: p.income - p.rentAfter - p.utilities - p.living,
-      B: p.income - p.pmFee - p.utilities - p.living,
-      C: p.income + rentIn - p.pmFee - p.selfRentC - p.utilities - p.living
+
+    // 各阶段月结余：按阶段起点的贷款状态计算，贷款在阶段中途还清时拆成两行
+    const phaseSurplus = (bd, withLoan) => {
+      const pay = withLoan ? loan.firstPayment : 0;
+      return {
+        A: bd.income - p.rentAfter - p.utilities - bd.living,
+        B: bd.income - pay - p.pmFee - p.utilities - bd.living,
+        C: bd.income + rentIn - pay - p.pmFee - p.selfRentC - p.utilities - bd.living
+      };
     };
-    const retired = {
-      A: p.pension - p.rentAfter - p.utilities - p.living,
-      B: p.pension - p.pmFee - p.utilities - p.living,
-      C: p.pension + rentIn - p.pmFee - p.selfRentC - p.utilities - p.living
-    };
-    const retiredWithLoan = {
-      A: retired.A,
-      B: p.pension - loan.firstPayment - p.pmFee - p.utilities - p.living,
-      C: p.pension + rentIn - loan.firstPayment - p.pmFee - p.selfRentC - p.utilities - p.living
-    };
-    const retireBeforeLoan = p.retireYears < p.loanYearsLeft;
     const cell = v => v === 0 ? '<span class="dash">—</span>' : yuan(v);
     const sign = v => v >= 0 ? 'pos' : 'neg';
+    const loanEndM = p.loanYearsLeft * 12;
+    let phaseTable = `<table class="mt"><caption>各阶段每月结余（元）</caption><thead><tr><th>阶段</th><th>A 卖出</th><th>B 留房自住</th><th>C 留房出租</th></tr></thead><tbody>`;
+    phaseBounds(p).forEach(bd => {
+      if (!isFinite(bd.start) || bd.start > p.horizon * 12) return;
+      const s = Math.max(1, bd.start), e = Math.min(p.horizon * 12, bd.end);
+      if (e < s) return;
+      const addRow = (label, v) => {
+        phaseTable += `<tr><td>${label}</td><td class="${sign(v.A)}">${yuan(v.A)}</td><td class="${sign(v.B)}">${yuan(v.B)}</td><td class="${sign(v.C)}">${yuan(v.C)}</td></tr>`;
+      };
+      if (s > loanEndM) addRow(bd.label, phaseSurplus(bd, false));
+      else if (e <= loanEndM) addRow(`${bd.label}（B/C 还贷中）`, phaseSurplus(bd, true));
+      else {
+        addRow(`${bd.label}（B/C 还贷中）`, phaseSurplus(bd, true));
+        addRow(`${bd.label}（B/C 第 ${p.loanYearsLeft} 年末还清后）`, phaseSurplus(bd, false));
+      }
+    });
+    phaseTable += '</tbody></table>';
 
     const methodName = loan.acp ? '等额本金' : '等额本息';
     const formula = loan.acp
@@ -486,24 +614,33 @@
       `<tr class="sum"><td>合计</td><td>—</td><td>${yuan(loan.interest + loan.principal)}</td><td>${yuan(loan.interest)}</td><td>${yuan(loan.principal)}</td><td>${yuan(loan.rows.length ? loan.rows[loan.rows.length-1].close : 0)}</td></tr>` +
       `</tbody></table>`;
     $('monthlyBox').innerHTML =
-      `<table class="mt"><caption>每月收支（元）· 贷款还清前</caption><thead><tr><th>项目</th><th>A 卖出</th><th>B 留房自住</th><th>C 留房出租</th></tr></thead><tbody>` +
+      `<table class="mt"><caption>每月收支（元）· 阶段 1 工作期 · 贷款还清前</caption><thead><tr><th>项目</th><th>A 卖出</th><th>B 留房自住</th><th>C 留房出租</th></tr></thead><tbody>` +
       monthly.map(r => `<tr><td>${r[0]}</td><td>${cell(r[1])}</td><td>${cell(r[2])}</td><td>${cell(r[3])}</td></tr>`).join('') +
       `<tr class="sum"><td>月结余</td><td class="${sign(sums.A)}">${yuan(sums.A)}</td><td class="${sign(sums.B)}">${yuan(sums.B)}</td><td class="${sign(sums.C)}">${yuan(sums.C)}</td></tr>` +
-      `</tbody></table>` +
-      `<p class="note">退休后（第 ${p.retireYears + 1} 年起）月收入降为退休工资 ${yuan(p.pension)} 元，不再有工作收入。<br>` +
-      `贷款还清后（第 ${p.loanYearsLeft + 1} 年起）月结余：A ${yuan(after.A)} 元｜B ${yuan(after.B)} 元｜C ${yuan(after.C)} 元。<br>` +
-      `退休后（贷款已还清）月结余：A ${yuan(retired.A)} 元｜B ${yuan(retired.B)} 元｜C ${yuan(retired.C)} 元。` +
-      (retireBeforeLoan
-        ? `<br><b>注意：退休时贷款还没还清</b>（第 ${p.loanYearsLeft + 1} 年才还清），退休后仍需还贷的月结余：A ${yuan(retiredWithLoan.A)} 元｜B ${yuan(retiredWithLoan.B)} 元｜C ${yuan(retiredWithLoan.C)} 元。`
+      `</tbody></table>` + phaseTable +
+      `<p class="note">上表只列阶段 1（工作期）的收入与开销；阶段 2 没有收入（开销吃存款），阶段 3 只有养老金 ${yuan(p.pension)} 元。三阶段各自的月结余见"各阶段每月结余"。` +
+      (p2Year && p2Year <= p.loanYearsLeft
+        ? `<br><b>注意：提前退休时贷款还没还清</b>（第 ${p.loanYearsLeft} 年末才还清），提前退休期仍要还月供。`
         : '') +
       `<br>房贷月供${loan.acp ? '首月' : ''} ${yuan(loan.firstPayment)} 元中，利息 ${yuan(loan.firstInterest)} 元、本金 ${yuan(loan.firstPrincipal)} 元` +
       `${loan.acp ? `（等额本金，月供逐月递减，末年月均 ${yuan(loan.rows.length ? loan.rows[loan.rows.length-1].pay / 12 : 0)} 元）` : ''}；` +
-      `${p.loanYearsLeft} 年累计还本 ${w(loan.principal)} 万元、付息 ${w(loan.interest)} 万元。</p>`;
+      `${p.loanYearsLeft} 年累计还本 ${w(loan.principal)} 万元、付息 ${w(loan.interest)} 万元。` +
+      (loan.acp ? `<br>等额本金月供逐月递减，"还贷中"的月结余按首月月供估算。` : '') +
+      `</p>`;
 
+    $('subtitle').textContent = `已有房主（现年 ${p.currentAge} 岁）：三条路径，比较第 ${p.horizon} 年末（${endAge} 岁）手上的现金`;
+
+    const phaseBits = [];
+    if (p.p1StartAge > 0) phaseBits.push(`${p.p1StartAge} 岁起工作`);
+    if (p.p2StartAge > 0) phaseBits.push(`${p.p2StartAge} 岁提前退休`);
+    if (p.p3StartAge > 0) phaseBits.push(`${p.p3StartAge} 岁起领养老金`);
     $('verdict').innerHTML =
-      `${p.horizon}年后，卖房路径手上现金 <span class="num">${w(res.A.cash)}</span> 万元，` +
+      `${p.horizon}年后（${endAge} 岁），卖房路径手上现金 <span class="num">${w(res.A.cash)}</span> 万元，` +
       `留房自住 <span class="num">${w(res.B.cash)}</span> 万元，留房出租 <span class="num">${w(res.C.cash)}</span> 万元。<br>` +
-      `<span class="${gap >= 0 ? 'pos' : 'neg'}">${best.name}</span> 最优，比最差路径多 <span class="num">${w(gap)}</span> 万元。`;
+      `<span class="${gap >= 0 ? 'pos' : 'neg'}">${best.name}</span> 最优，比最差路径多 <span class="num">${w(gap)}</span> 万元。` +
+      (phaseBits.length
+        ? `<br><span style="font-size:13px;color:#64748b">${phaseBits.join('；')}；提前退休期无工资无养老金，开销从存款里扣。</span>`
+        : '');
 
     $('pathCards').innerHTML = PATHS.map(pt => {
       const r = res[pt.key];
@@ -526,9 +663,11 @@
       ['当前净值（市值−剩余贷款）', `${w(equity)} 万元`],
       ['账面浮亏', `${w(loss)} 万元（沉没成本，不参与比较）`],
       ['现在卖房净回笼（扣成本与还贷）', `${w(nowSellNet)} 万元`],
-      ['留房路径每月结余', `${yuan(p.income - p.monthlyPay - p.pmFee - p.utilities - p.living)} 元`],
-      ['卖出路径每月结余', `${yuan(p.income - p.rentAfter - p.utilities - p.living)} 元`],
-      ['退休时间', `第 ${p.retireYears + 1} 年起，工作收入停止，改为每月退休工资 ${yuan(p.pension)} 元`],
+      ['当前年龄', `${p.currentAge} 岁`],
+      ['期末年龄', `${endAge} 岁`],
+      ['阶段 1 工作期', phaseLine(p.p1StartAge, `，月收入 ${yuan(p.income)} 元`, '从对比开始就是工作期')],
+      ['阶段 2 提前退休', phaseLine(p.p2StartAge, '，无工资无养老金', '不启用')],
+      ['阶段 3 领养老金', phaseLine(p.p3StartAge, `，每月 ${yuan(p.pension)} 元`, '不启用')],
       ['A 与 B 交叉点', res.crossAB ? `第 ${res.crossAB} 年` : '无交叉'],
       ['A 与 C 交叉点', res.crossAC ? `第 ${res.crossAC} 年` : '无交叉']
     ];
@@ -558,23 +697,46 @@
     ];
     $('costTable').innerHTML = costRows.map(([k, a, b, c]) => `<tr><td>${k}</td><td>${w(a)}</td><td>${w(b)}</td><td>${w(c)}</td></tr>`).join('');
 
-    const h = ['年', '收入', '租金', '出租收入', '月供', '物业', '水电', '生活', '一次性', '利息', '年度结余', '年末存款', '透支欠款', '剩余贷款', '手上现金'];
-    const row = r => `<tr><td>${r.year}</td><td>${yuan(r.income)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.rentOut)}</td><td>${yuan(r.mortgage)}</td><td>${yuan(r.pm)}</td><td>${yuan(r.util)}</td><td>${yuan(r.living)}</td><td>${yuan(r.other)}</td><td>${yuan(r.interest)}</td><td>${yuan(r.net)}</td><td>${yuan(r.deposit)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.loan)}</td><td>${yuan(r.cash)}</td></tr>`;
+    const h = ['年', '年龄', '阶段', '收入', '租金', '出租收入', '月供', '物业', '水电', '生活', '一次性', '利息', '年度结余', '年末存款', '透支欠款', '剩余贷款', '手上现金'];
+    const isSwitchYear = r => (p.p2StartAge > 0 && r.year === p2Year) || (p.p3StartAge > 0 && r.year === p3Year);
+    const row = r => `<tr${isSwitchYear(r) ? ' style="background:#fff7e6;font-weight:600"' : ''}><td>${r.year}</td><td>${p.currentAge + r.year - 1}</td><td>${PHASE_LABEL[r.phase]}</td><td>${yuan(r.income)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.rentOut)}</td><td>${yuan(r.mortgage)}</td><td>${yuan(r.pm)}</td><td>${yuan(r.util)}</td><td>${yuan(r.living)}</td><td>${yuan(r.other)}</td><td>${yuan(r.interest)}</td><td>${yuan(r.net)}</td><td>${yuan(r.deposit)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.loan)}</td><td>${yuan(r.cash)}</td></tr>`;
     $('yearA').innerHTML = `<thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${res.A.yearly.map(row).join('')}</tbody>`;
     $('yearB').innerHTML = `<thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${res.B.yearly.map(row).join('')}</tbody>`;
     $('yearC').innerHTML = `<thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${res.C.yearly.map(row).join('')}</tbody>`;
 
     if (!chart) return;
+    const markLines = [];
+    const addMarkLine = (year, label, color, type) => {
+      if (year >= 1 && year <= p.horizon) {
+        markLines.push({
+          xAxis: year + '年',
+          label: { formatter: label, position: 'insideEndTop', fontSize: 11, color },
+          lineStyle: { color, type, width: 1 }
+        });
+      }
+    };
+    if (p2Year !== null) addMarkLine(p2Year, p.p2StartAge + '岁退休', '#d48806', 'dotted');
+    if (p3Year !== null) addMarkLine(p3Year, p.p3StartAge + '岁领养老金', '#389e0d', 'dotted');
     chart.setOption({
       tooltip: { trigger: 'axis', valueFormatter: v => w(v) + ' 万' },
       legend: { top: 0, data: PATHS.map(x => x.name) },
-      grid: { left: 66, right: 24, top: 48, bottom: 36 },
-      xAxis: { type: 'category', data: res.A.yearly.map(r => r.year + '年'), boundaryGap: false },
+      grid: { left: 66, right: 24, top: 56, bottom: 36 },
+      xAxis: {
+        type: 'category',
+        data: res.A.yearly.map(r => r.year + '年'),
+        boundaryGap: false,
+        axisLabel: {
+          interval: i => i % 10 === 9,
+          formatter: (v, i) => `${i + 1}年/${p.currentAge + i}岁`,
+          fontSize: 10
+        }
+      },
       yAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e4).toFixed(0) + '万' } },
       series: PATHS.map((pt, i) => ({
         name: pt.name, type: 'line', smooth: true,
         color: ['#1677ff', '#fa8c16', '#12a150'][i],
-        data: res[pt.key].yearly.map(r => r.cash)
+        data: res[pt.key].yearly.map(r => r.cash),
+        ...(i === 0 && markLines.length ? { markLine: { silent: true, symbol: 'none', data: markLines } } : {})
       }))
     }, true);
   }
@@ -583,6 +745,10 @@
     const el = $(k);
     el.value = DEFAULTS[k];
     el.addEventListener('input', render);
+  });
+  $('resetBtn').addEventListener('click', () => {
+    Object.keys(DEFAULTS).forEach(k => { $(k).value = DEFAULTS[k]; });
+    render();
   });
 
   window.addEventListener('resize', () => chart && chart.resize());
