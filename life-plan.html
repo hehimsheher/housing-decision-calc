@@ -129,8 +129,10 @@
       <div class="field"><label>现金钱包年化利率（%，活期/零钱通）</label><input id="cashRate" type="number" step="0.1"></div>
       <div class="field"><label>投资钱包期望年化收益率（%）</label><input id="investReturn" type="number" step="0.1"></div>
       <div class="field"><label>投资情景上下浮动（百分点）</label><input id="investRange" type="number" step="0.1"></div>
-      <div class="field"><label>每月投入投资（元）</label><input id="monthlyInvest" type="number" step="100"></div>
-      <p class="note">现金钱包是活期/零钱通一类的低风险余额，按现金利率计息；投资钱包按期望收益率计息，实际会波动，页面用"期望收益率 ± 上下浮动"给出保守/乐观情景。每月结余先还负债，然后拿出固定金额投入投资钱包，剩余全部进现金钱包；支出不够时先花现金钱包，再花投资钱包，最后才形成负债。当月结余不够投入金额时，只投能拿出的部分。</p>
+      <div class="field"><label>阶段1 每月投入投资（元）</label><input id="invest1" type="number" step="100"></div>
+      <div class="field"><label>阶段2 每月投入投资（元）</label><input id="invest2" type="number" step="100"></div>
+      <div class="field"><label>阶段3 每月投入投资（元）</label><input id="invest3" type="number" step="100"></div>
+      <p class="note">现金钱包按现金利率计息（默认 0.7%，活期/零钱通口径）；投资钱包按期望收益率计息（默认 5%），实际会波动，页面用"期望收益率 ± 上下浮动"给出保守/乐观情景。每个阶段单独设置"每月投入投资"的固定金额。每月先还负债、支付各项支出，然后从现金钱包按当前阶段的金额转入投资钱包；现金不够就只转能拿出的部分，剩余留在现金钱包。这样提前退休阶段没有工资时，也可以继续用已有现金投资。阶段 2 不启用时，阶段 2 的金额不会被使用。</p>
     </div>
 
     <div class="card">
@@ -183,6 +185,13 @@
     </div>
 
     <div class="card">
+      <h2>租房与日常开销</h2>
+      <div class="field"><label>同地段月租金（元）</label><input id="rent" type="number" step="100"></div>
+      <div class="field"><label>每月水电燃气取暖（元）</label><input id="utilities" type="number" step="10"></div>
+      <p class="note">不买房时全年付租金；买房前也按这个租金付；买房后租金停止，但水电燃气取暖继续支付。这两个字段始终可调，不受"启用买房"影响。</p>
+    </div>
+
+    <div class="card">
       <h2>住房方案（可选，可启停）</h2>
       <label class="checkline"><input id="buyHouse" type="checkbox"> 启用买房方案（不勾选 = 一直租房）</label>
       <div id="houseFields">
@@ -193,11 +202,9 @@
         <div class="field"><label>房贷年利率（%）</label><input id="mortgageRate" type="number" step="0.01"></div>
         <div class="field"><label>贷款年限（年）</label><input id="loanYears" type="number" step="1"></div>
         <div class="field"><label>每月物业费（元）</label><input id="pmFee" type="number" step="10"></div>
-        <div class="field"><label>每月水电燃气取暖（元）</label><input id="utilities" type="number" step="10"></div>
-        <div class="field"><label>同地段月租金（元）</label><input id="rent" type="number" step="100"></div>
         <div class="field"><label>房产年增值率（%，0 = 不涨不跌）</label><input id="houseGrowth" type="number" step="0.1"></div>
         <div class="field"><label>期末卖房交易成本（%）</label><input id="sellCost" type="number" step="0.1"></div>
-        <p class="note">买房前和一直租房时付租金；买房后不再付租金，改为月供 + 物业费。公积金贷款/组合贷可以把实际综合利率填进"房贷年利率"。不启用买房时，这一整块参数不参与计算。</p>
+        <p class="note">买房前付租金；买房后不再付租金，改为月供 + 物业费。租金和水电在「租房与日常开销」卡片里设置，不受"启用买房"影响。公积金贷款/组合贷可以把实际综合利率填进"房贷年利率"。不启用买房时，这一整块买房参数不参与计算。</p>
       </div>
     </div>
 
@@ -269,7 +276,7 @@
     <p>说明：按《住房公积金管理条例》和各地公积金中心口径，离休、退休可一次性提取公积金账户全部余额并销户；未到法定退休年龄提前退休的，通常需退休证或养老金核定等材料。页面按你选的"公积金提取时点"把余额转入现金钱包，不提取则继续留在公积金账户计息。</p>
     <p>说明：买房是可选方案，可以随时停用。买房时可以用公积金余额优先支付首付和税费；房贷按等额本息、固定利率计算，不提前还款。期末同时给出"继续持有房产"和"卖房扣交易成本"两个口径。</p>
     <p>说明：大件支出支持一次付清或分期。分期按首付 + 等额本息估算，利息计入成本；金额填负数按一次性收入处理。</p>
-    <p>说明：现金钱包按现金利率（默认 0.7%）计息，投资钱包按期望收益率计息；两者都只是假设，投资钱包实际会波动，不保证收益。每月结余先还负债，再按"每月投入投资"的固定金额进入投资钱包，剩余全部进现金钱包；支出不够时先花现金钱包，再花投资钱包。当前负债和现金不足形成的透支欠款按"负债年利率"计息，正现金流优先还债。</p>
+    <p>说明：现金钱包按现金利率（默认 0.7%）计息，投资钱包按期望收益率计息；两者都只是假设，投资钱包实际会波动，不保证收益。每月先还负债和支付支出，然后从现金钱包按当前阶段的"每月投入投资"金额转入投资钱包，现金不够就只转能拿出的部分；剩余留在现金钱包。当前负债和现金不足形成的透支欠款按"负债年利率"计息，正现金流优先还债。</p>
     <p>提醒：页面不扣个人所得税，月薪按税前口径填；社保和公积金比例直接乘该收入，未设缴费基数上下限，也不校验缴纳年限对购房资格/贷款额度的影响。</p>
     <p>提醒：本页不考虑通货膨胀、工资增长、租金上涨和房屋维修/翻新费用，所有收入、租金、开销都是固定值；图上和表里的金额都是名义值，60 年后的 1000 万不等于今天的 1000 万。结果用于辅助思考，不构成投资建议。</p>
   </div>
@@ -281,7 +288,7 @@
 
   const DEFAULTS = {
     currentAge: 23, cashStart: 0, investStart: 0, debt: 0, debtRate: 4,
-    cashRate: 0.7, investReturn: 5, investRange: 1, monthlyInvest: 1000,
+    cashRate: 0.7, investReturn: 5, investRange: 1, invest1: 1000, invest2: 0, invest3: 0,
     p1StartAge: 23, income: 7000, living1: 3000,
     p2StartAge: 0, living2: 3000,
     p3StartAge: 65, pension: 3500, living3: 3000,
@@ -293,7 +300,7 @@
 
   const LIMITS = {
     currentAge: [1, 100], cashStart: [0, 1e4], investStart: [0, 1e4], debt: [0, 1e4], debtRate: [0, 30],
-    cashRate: [-10, 30], investReturn: [-100, 100], investRange: [0, 20], monthlyInvest: [0, 1e6],
+    cashRate: [-10, 30], investReturn: [-100, 100], investRange: [0, 20], invest1: [0, 1e6], invest2: [0, 1e6], invest3: [0, 1e6],
     p1StartAge: [0, 120], income: [0, 1e7], living1: [0, 1e6],
     p2StartAge: [0, 120], living2: [0, 1e6],
     p3StartAge: [0, 120], pension: [0, 1e6], living3: [0, 1e6],
@@ -326,12 +333,10 @@
     if (bal <= 0 || n <= 0) return 0;
     return r === 0 ? bal / n : bal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
   }
-  function applyFlow2(cash, invest, debt, flow, monthlyInvest) {
+  function applyFlow2(cash, invest, debt, flow) {
     if (flow >= 0) {
       const repay = Math.min(debt, flow);
-      const remain = flow - repay;
-      const inv = Math.min(remain, monthlyInvest);
-      return [cash + remain - inv, invest + inv, debt - repay];
+      return [cash + flow - repay, invest, debt - repay];
     }
     let need = -flow;
     const takeCash = Math.min(cash, need);
@@ -410,7 +415,7 @@
     const fi = p.fundRate / 100 / 12;
     const dr = p.debtRate / 100 / 12;
     const mr = p.mortgageRate / 100 / 12;
-    const monthlyInvest = p.monthlyInvest;
+    const investOf = ph => ph === 0 ? p.invest1 : ph === 1 ? p.invest2 : p.invest3;
     const p2M = p.p2StartAge > 0 ? ageToMonth(p.p2StartAge, p) : Infinity;
     const p3M = p.p3StartAge > 0 ? ageToMonth(p.p3StartAge, p) : Infinity;
     const retireM = p.fundWithdrawTiming === 'none' ? Infinity
@@ -438,7 +443,7 @@
     let incomeTotal = 0, socialTotal = 0, fundPersonalTotal = 0, fundEmployerTotal = 0;
     let livingTotal = 0, rentTotal = 0, pmTotal = 0, utilTotal = 0;
     let cashInterestTotal = 0, investInterestTotal = 0, fundInterestTotal = 0, debtInterestTotal = 0;
-    let fundWithdrawnTotal = 0;
+    let fundWithdrawnTotal = 0, investedTotal = 0;
     let minCashWallet = cash;
     let minLiquid = cash + invest - debt;
     let peakLiability = debt;
@@ -609,7 +614,15 @@
         }
       }
 
-      [cash, invest, debt] = applyFlow2(cash, invest, debt, flow, monthlyInvest);
+      [cash, invest, debt] = applyFlow2(cash, invest, debt, flow);
+
+      // 按当前阶段的固定金额，从现金钱包转入投资钱包；现金不够就只投能拿出的部分
+      const moveToInvest = Math.min(cash, investOf(ph));
+      if (moveToInvest > 0) {
+        cash -= moveToInvest;
+        invest += moveToInvest;
+        investedTotal += moveToInvest;
+      }
 
       const instBal = events.reduce((s, e) => s + (e.bal > 0 ? e.bal : 0), 0);
       const liability = debt + mortgageBal + instBal;
@@ -664,7 +677,7 @@
         bigSpend: events.reduce((s, e) => s + (e.amountY > 0 ? e.amountY : 0), 0),
         cashInterest: cashInterestTotal, investInterest: investInterestTotal,
         fundInterest: fundInterestTotal, debtInterest: debtInterestTotal,
-        fundWithdraw: fundWithdrawnTotal
+        fundWithdraw: fundWithdrawnTotal, invested: investedTotal
       },
       events
     };
@@ -743,6 +756,7 @@
       ['期末净资产（保守 / 基准 / 乐观）', `${w(lowRes.final.netHold)} / ${w(f.netHold)} / ${w(highRes.final.netHold)} 万元`],
       ['社保累计个人缴纳', `${w(res.totals.social)} 万元`],
       ['公积金累计（个人+单位）', `${w(res.totals.fundPersonal + res.totals.fundEmployer)} 万元`],
+      ['累计投入投资（从现金转入）', `${w(res.totals.invested)} 万元`],
       ...(res.totals.fundWithdraw > 0 ? [['退休时提取公积金（转入现金）', `${w(res.totals.fundWithdraw)} 万元`]] : []),
       ['大件现金支出（含分期利息）', `${w(res.totals.bigDown + res.totals.bigPayment)} 万元`],
       ['房贷利息合计', `${w(res.totals.mortgageInterest)} 万元`],
@@ -789,6 +803,7 @@
       ['大件分期还款合计', res.totals.bigPayment],
       ['其中大件分期利息', res.totals.bigInterest],
       ['大件负值收入合计', res.totals.bigIncome],
+      ['累计投入投资（从现金转入）', res.totals.invested],
       ['现金钱包利息合计', res.totals.cashInterest],
       ['投资钱包收益合计（期望）', res.totals.investInterest],
       ['公积金利息合计', res.totals.fundInterest],
