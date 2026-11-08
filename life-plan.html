@@ -75,6 +75,7 @@
   .br-grid input:focus { border-color: #0f9d8a; }
   @media (max-width: 420px) { .br-grid { grid-template-columns: 1fr; } }
   .verdict { background: linear-gradient(135deg, #edfbf8, #f8fffd); border-radius: 14px; padding: 22px 18px; text-align: center; font-size: 17px; line-height: 2; font-weight: 600; }
+  .warn { background: #fff7e6; border: 1px solid #ffe0a3; color: #8a5a00; border-radius: 12px; padding: 10px 14px; font-size: 13px; line-height: 1.8; margin-bottom: 14px; }
   .num { color: #0f9d8a; font-size: 25px; font-weight: 700; }
   .pos { color: #e5484d; }
   .neg { color: #12a150; }
@@ -128,12 +129,8 @@
       <div class="field"><label>现金钱包年化利率（%，活期/零钱通）</label><input id="cashRate" type="number" step="0.1"></div>
       <div class="field"><label>投资钱包期望年化收益率（%）</label><input id="investReturn" type="number" step="0.1"></div>
       <div class="field"><label>投资情景上下浮动（百分点）</label><input id="investRange" type="number" step="0.1"></div>
-      <div class="field"><label>阶段1 结余投入投资比例（%）</label><input id="investShare1" type="number" step="1"></div>
-      <div class="field"><label>阶段2 结余投入投资比例（%）</label><input id="investShare2" type="number" step="1"></div>
-      <div class="field"><label>阶段3 结余投入投资比例（%）</label><input id="investShare3" type="number" step="1"></div>
-      <div class="field"><label>阶段2 每月从现金转投（元，0=不转）</label><input id="transfer2" type="number" step="100"></div>
-      <div class="field"><label>阶段3 每月从现金转投（元，0=不转）</label><input id="transfer3" type="number" step="100"></div>
-      <p class="note">现金钱包是活期/零钱通一类的低风险余额，按现金利率计息；投资钱包按期望收益率计息，实际会波动，页面用"期望收益率 ± 上下浮动"给出保守/乐观情景。每月结余先还负债，剩余部分按**当前阶段**的比例分到投资钱包和现金钱包；支出不够时先花现金钱包，再花投资钱包，最后才形成负债。退休阶段没有工资时，如果还想把已有现金搬进投资钱包，用"每月从现金转投"设置。</p>
+      <div class="field"><label>每月投入投资（元）</label><input id="monthlyInvest" type="number" step="100"></div>
+      <p class="note">现金钱包是活期/零钱通一类的低风险余额，按现金利率计息；投资钱包按期望收益率计息，实际会波动，页面用"期望收益率 ± 上下浮动"给出保守/乐观情景。每月结余先还负债，然后拿出固定金额投入投资钱包，剩余全部进现金钱包；支出不够时先花现金钱包，再花投资钱包，最后才形成负债。当月结余不够投入金额时，只投能拿出的部分。</p>
     </div>
 
     <div class="card">
@@ -215,6 +212,8 @@
   </aside>
 
   <main>
+    <div id="warnBox"></div>
+
     <div class="card">
       <div class="verdict" id="verdict"></div>
       <div class="stats" id="stats"></div>
@@ -236,7 +235,7 @@
     <div class="card">
       <h2>投资收益情景</h2>
       <div class="scroll"><table><thead><tr><th>情景</th><th>投资年化收益率</th><th>期末投资钱包</th><th>期末净资产</th></tr></thead><tbody id="scenarioTable"></tbody></table></div>
-      <p class="note">投资钱包不是稳定收益。这里用"期望收益率 ± 上下浮动"做保守/乐观情景，只是两端假设，不代表真实波动路径；实际可能某年亏钱、也可能长期跑不赢现金。</p>
+      <p class="note">投资钱包不是稳定收益。这里用"期望收益率 ± 上下浮动"做保守/乐观情景，只是两端假设，不代表真实波动路径；实际可能某年亏钱、也可能长期跑不赢现金。如果三行的期末投资钱包都是 0，说明当前参数下没有形成投资余额（例如每月结余不足以投入）。</p>
     </div>
 
     <div class="card">
@@ -247,7 +246,7 @@
     <div class="card">
       <h2>累计收支（万元）</h2>
       <table><tbody id="costTable"></tbody></table>
-      <p class="note">个人公积金是工资到公积金账户的转移，不计入"年度现金流"；单位公积金是额外进入公积金账户的钱。公积金退休提取、现金转投投资也都是钱包内部转移，不计入年度现金流。年度现金流 = 收入 + 单位公积金 + 现金利息 + 投资利息 + 公积金利息 − 社保 − 生活 − 房租 − 房贷 − 物业 − 水电 − 大件 − 购房首付税费 − 负债利息。</p>
+      <p class="note">个人公积金是工资到公积金账户的转移，不计入"年度现金流"；单位公积金是额外进入公积金账户的钱。公积金退休提取也是钱包内部转移，不计入年度现金流。年度现金流 = 收入 + 单位公积金 + 现金利息 + 投资利息 + 公积金利息 − 社保 − 生活 − 房租 − 房贷 − 物业 − 水电 − 大件 − 购房首付税费 − 负债利息。</p>
     </div>
 
     <div class="card">
@@ -258,7 +257,7 @@
     <div class="card">
       <h2>每年收支与资产明细（单位：元）</h2>
       <div class="scroll"><table class="yt" id="yearTable"></table></div>
-      <p class="note">"大件"含一次性付款/首付和分期月供；"购房"是首付 + 税费的现金支出；"公积金个人"和"公积金单位"是账户流入，个人部分同时从现金扣除。"公积金提取"是退休时把公积金余额转入现金钱包；"现金转投"是退休阶段把现金钱包的钱搬到投资钱包；两者都是内部转移，不计入年度现金流。年末现金是现金钱包，年末投资是投资钱包，两者支出顺序为现金钱包 → 投资钱包 → 负债。购房当年和阶段切换当年会高亮。</p>
+      <p class="note">"大件"含一次性付款/首付和分期月供；"购房"是首付 + 税费的现金支出；"公积金个人"和"公积金单位"是账户流入，个人部分同时从现金扣除。"公积金提取"是退休时把公积金余额转入现金钱包，属于内部转移，不计入年度现金流。年末现金是现金钱包，年末投资是投资钱包，两者支出顺序为现金钱包 → 投资钱包 → 负债。购房当年和阶段切换当年会高亮。</p>
     </div>
   </main>
 </div>
@@ -270,7 +269,7 @@
     <p>说明：按《住房公积金管理条例》和各地公积金中心口径，离休、退休可一次性提取公积金账户全部余额并销户；未到法定退休年龄提前退休的，通常需退休证或养老金核定等材料。页面按你选的"公积金提取时点"把余额转入现金钱包，不提取则继续留在公积金账户计息。</p>
     <p>说明：买房是可选方案，可以随时停用。买房时可以用公积金余额优先支付首付和税费；房贷按等额本息、固定利率计算，不提前还款。期末同时给出"继续持有房产"和"卖房扣交易成本"两个口径。</p>
     <p>说明：大件支出支持一次付清或分期。分期按首付 + 等额本息估算，利息计入成本；金额填负数按一次性收入处理。</p>
-    <p>说明：现金钱包按现金利率（默认 0.7%）计息，投资钱包按期望收益率计息；两者都只是假设，投资钱包实际会波动，不保证收益。当前负债和现金不足形成的透支欠款按"负债年利率"计息，正现金流优先还债。</p>
+    <p>说明：现金钱包按现金利率（默认 0.7%）计息，投资钱包按期望收益率计息；两者都只是假设，投资钱包实际会波动，不保证收益。每月结余先还负债，再按"每月投入投资"的固定金额进入投资钱包，剩余全部进现金钱包；支出不够时先花现金钱包，再花投资钱包。当前负债和现金不足形成的透支欠款按"负债年利率"计息，正现金流优先还债。</p>
     <p>提醒：页面不扣个人所得税，月薪按税前口径填；社保和公积金比例直接乘该收入，未设缴费基数上下限，也不校验缴纳年限对购房资格/贷款额度的影响。</p>
     <p>提醒：本页不考虑通货膨胀、工资增长、租金上涨和房屋维修/翻新费用，所有收入、租金、开销都是固定值；图上和表里的金额都是名义值，60 年后的 1000 万不等于今天的 1000 万。结果用于辅助思考，不构成投资建议。</p>
   </div>
@@ -281,22 +280,20 @@
   const HORIZON = 60;
 
   const DEFAULTS = {
-    currentAge: 28, cashStart: 10, investStart: 20, debt: 0, debtRate: 4,
-    cashRate: 0.7, investReturn: 5, investRange: 1,
-    investShare1: 50, investShare2: 0, investShare3: 0, transfer2: 0, transfer3: 0,
-    p1StartAge: 28, income: 12000, living1: 3000,
-    p2StartAge: 55, living2: 3000,
+    currentAge: 23, cashStart: 0, investStart: 0, debt: 0, debtRate: 4,
+    cashRate: 0.7, investReturn: 5, investRange: 1, monthlyInvest: 1000,
+    p1StartAge: 23, income: 7000, living1: 3000,
+    p2StartAge: 0, living2: 3000,
     p3StartAge: 65, pension: 3500, living3: 3000,
-    socialRate: 10.5, fundPersonal: 7, fundEmployer: 7, fundRate: 1.5, fundBalance: 5, paySocial: true, payFund: true, useFund: true, fundWithdrawTiming: 'early',
-    buyHouse: true, buyYear: 5, housePrice: 120, downRatio: 30, taxRate: 1.5,
+    socialRate: 10.5, fundPersonal: 5.8, fundEmployer: 5.8, fundRate: 1, fundBalance: 0, paySocial: true, payFund: true, useFund: true, fundWithdrawTiming: 'pension',
+    buyHouse: false, buyYear: 5, housePrice: 120, downRatio: 30, taxRate: 1.5,
     mortgageRate: 3, loanYears: 30, pmFee: 300, utilities: 400, rent: 3000,
     houseGrowth: 0, sellCost: 3
   };
 
   const LIMITS = {
     currentAge: [1, 100], cashStart: [0, 1e4], investStart: [0, 1e4], debt: [0, 1e4], debtRate: [0, 30],
-    cashRate: [-10, 30], investReturn: [-100, 100], investRange: [0, 20],
-    investShare1: [0, 100], investShare2: [0, 100], investShare3: [0, 100], transfer2: [0, 1e6], transfer3: [0, 1e6],
+    cashRate: [-10, 30], investReturn: [-100, 100], investRange: [0, 20], monthlyInvest: [0, 1e6],
     p1StartAge: [0, 120], income: [0, 1e7], living1: [0, 1e6],
     p2StartAge: [0, 120], living2: [0, 1e6],
     p3StartAge: [0, 120], pension: [0, 1e6], living3: [0, 1e6],
@@ -329,11 +326,12 @@
     if (bal <= 0 || n <= 0) return 0;
     return r === 0 ? bal / n : bal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
   }
-  function applyFlow2(cash, invest, debt, flow, investShare) {
+  function applyFlow2(cash, invest, debt, flow, monthlyInvest) {
     if (flow >= 0) {
       const repay = Math.min(debt, flow);
       const remain = flow - repay;
-      return [cash + remain * (1 - investShare), invest + remain * investShare, debt - repay];
+      const inv = Math.min(remain, monthlyInvest);
+      return [cash + remain - inv, invest + inv, debt - repay];
     }
     let need = -flow;
     const takeCash = Math.min(cash, need);
@@ -345,9 +343,7 @@
     return [cash, invest, debt + need];
   }
 
-  const BIG_DEFAULTS = [
-    { name: '买车', amount: 15, year: 3, downRatio: 30, years: 3, rate: 4 }
-  ];
+  const BIG_DEFAULTS = [];
   const BIG_LIMITS = {
     amount: [-1e4, 1e4], year: [1, HORIZON], downRatio: [0, 100], years: [0, 30], rate: [0, 30]
   };
@@ -414,8 +410,7 @@
     const fi = p.fundRate / 100 / 12;
     const dr = p.debtRate / 100 / 12;
     const mr = p.mortgageRate / 100 / 12;
-    const shareOf = ph => clamp((ph === 0 ? p.investShare1 : ph === 1 ? p.investShare2 : p.investShare3) / 100, 0, 1);
-    const transferOf = ph => ph === 1 ? p.transfer2 : ph === 2 ? p.transfer3 : 0;
+    const monthlyInvest = p.monthlyInvest;
     const p2M = p.p2StartAge > 0 ? ageToMonth(p.p2StartAge, p) : Infinity;
     const p3M = p.p3StartAge > 0 ? ageToMonth(p.p3StartAge, p) : Infinity;
     const retireM = p.fundWithdrawTiming === 'none' ? Infinity
@@ -443,7 +438,7 @@
     let incomeTotal = 0, socialTotal = 0, fundPersonalTotal = 0, fundEmployerTotal = 0;
     let livingTotal = 0, rentTotal = 0, pmTotal = 0, utilTotal = 0;
     let cashInterestTotal = 0, investInterestTotal = 0, fundInterestTotal = 0, debtInterestTotal = 0;
-    let fundWithdrawnTotal = 0, cashToInvestTotal = 0;
+    let fundWithdrawnTotal = 0;
     let minCashWallet = cash;
     let minLiquid = cash + invest - debt;
     let peakLiability = debt;
@@ -469,7 +464,7 @@
       income: 0, social: 0, fundPersonal: 0, fundEmployer: 0, living: 0, rent: 0,
       mortgage: 0, pm: 0, util: 0, big: 0, bigIncome: 0, house: 0,
       cashInterest: 0, investInterest: 0, fundInterest: 0, debtInterest: 0,
-      fundWithdraw: 0, cashToInvest: 0
+      fundWithdraw: 0
     });
     let acc = zeroAcc();
     const yearly = [];
@@ -614,16 +609,7 @@
         }
       }
 
-      [cash, invest, debt] = applyFlow2(cash, invest, debt, flow, shareOf(ph));
-
-      // 退休阶段可每月从现金钱包搬一部分到投资钱包（不影响净资产，只是换钱包）
-      const moveToInvest = Math.min(cash, transferOf(ph));
-      if (moveToInvest > 0) {
-        cash -= moveToInvest;
-        invest += moveToInvest;
-        cashToInvestTotal += moveToInvest;
-        acc.cashToInvest += moveToInvest;
-      }
+      [cash, invest, debt] = applyFlow2(cash, invest, debt, flow, monthlyInvest);
 
       const instBal = events.reduce((s, e) => s + (e.bal > 0 ? e.bal : 0), 0);
       const liability = debt + mortgageBal + instBal;
@@ -678,7 +664,7 @@
         bigSpend: events.reduce((s, e) => s + (e.amountY > 0 ? e.amountY : 0), 0),
         cashInterest: cashInterestTotal, investInterest: investInterestTotal,
         fundInterest: fundInterestTotal, debtInterest: debtInterestTotal,
-        fundWithdraw: fundWithdrawnTotal, cashToInvest: cashToInvestTotal
+        fundWithdraw: fundWithdrawnTotal
       },
       events
     };
@@ -701,6 +687,11 @@
 
     $('subtitle').textContent = `现年 ${p.currentAge} 岁 → 第 ${p.horizon} 年末 ${endAge} 岁｜现金 ${w(p.cashStart * 1e4)} 万 + 投资 ${w(p.investStart * 1e4)} 万 − 负债 ${w(p.debt * 1e4)} 万`;
 
+    const warn = f.netHold < 0
+      ? `压力测试结果：按当前参数，期末净资产为负。说明工资/养老金不足以覆盖房租、生活开销和利息，负债会持续累积。可以调高收入、降低开销，或调整买房/大件/投资参数再试。`
+      : '';
+    $('warnBox').innerHTML = warn ? `<div class="warn">${warn}</div>` : '';
+
     const housingDesc = p.buyHouse
       ? `第 ${p.buyYear} 年买房（总价 ${w(p.housePrice * 1e4)} 万，首付 ${p.downRatio}%，贷款 ${p.loanYears} 年）`
       : '一直租房，不买房';
@@ -715,10 +706,11 @@
     const rentLine = rentOnly
       ? `<br><span style="font-size:13px;color:#64748b">同样参数下不买房：净资产 ${w(rentOnly.final.netHold)} 万元；买房${rentDiff >= 0 ? '多' : '少'} ${w(Math.abs(rentDiff))} 万元（均按自住房估值计入）</span>`
       : '';
-    const volLine = `<br><span style="font-size:13px;color:#64748b">投资钱包按期望 ${p.investReturn}% 计算，实际会波动；保守 ${lowReturn}% / 乐观 ${highReturn}% 下，期末净资产约 ${w(lowRes.final.netHold)} / ${w(highRes.final.netHold)} 万元。</span>`;
+    const volLine = f.invest > 0
+      ? `<br><span style="font-size:13px;color:#64748b">投资钱包按期望 ${p.investReturn}% 计算，实际会波动；保守 ${lowReturn}% / 乐观 ${highReturn}% 下，期末净资产约 ${w(lowRes.final.netHold)} / ${w(highRes.final.netHold)} 万元。</span>`
+      : '';
     const walletMoveBits = [];
     if (res.totals.fundWithdraw > 0) walletMoveBits.push(`公积金退休提取 ${w(res.totals.fundWithdraw)} 万元转入现金钱包`);
-    if (res.totals.cashToInvest > 0) walletMoveBits.push(`退休阶段从现金钱包转投投资 ${w(res.totals.cashToInvest)} 万元`);
     const walletMoveLine = walletMoveBits.length ? `<br><span style="font-size:13px;color:#64748b">${walletMoveBits.join('；')}。</span>` : '';
 
     $('verdict').innerHTML =
@@ -752,7 +744,6 @@
       ['社保累计个人缴纳', `${w(res.totals.social)} 万元`],
       ['公积金累计（个人+单位）', `${w(res.totals.fundPersonal + res.totals.fundEmployer)} 万元`],
       ...(res.totals.fundWithdraw > 0 ? [['退休时提取公积金（转入现金）', `${w(res.totals.fundWithdraw)} 万元`]] : []),
-      ...(res.totals.cashToInvest > 0 ? [['退休阶段现金转投投资', `${w(res.totals.cashToInvest)} 万元`]] : []),
       ['大件现金支出（含分期利息）', `${w(res.totals.bigDown + res.totals.bigPayment)} 万元`],
       ['房贷利息合计', `${w(res.totals.mortgageInterest)} 万元`],
       ['大件分期利息合计', `${w(res.totals.bigInterest)} 万元`],
@@ -794,7 +785,6 @@
       ['购房首付 + 税费', res.totals.house],
       ['其中使用公积金余额', res.totals.fundUsed],
       ['退休时提取公积金（转入现金）', res.totals.fundWithdraw],
-      ['退休阶段现金转投投资', res.totals.cashToInvest],
       ['大件首付 / 一次付清合计', res.totals.bigDown],
       ['大件分期还款合计', res.totals.bigPayment],
       ['其中大件分期利息', res.totals.bigInterest],
@@ -839,13 +829,13 @@
       $('bigTable').innerHTML = `<div class="scroll"><table class="yt"><thead><tr><th>名称</th><th>年份</th><th>方式</th><th>金额</th><th>首付/一次付清</th><th>贷款</th><th>月供（元）</th><th>利息</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }
 
-    const h = ['年', '年龄', '阶段', '收入', '社保', '公积金个人', '公积金单位', '生活', '房租', '房贷', '物业', '水电', '大件', '购房', '公积金提取', '现金转投', '现金利息', '投资利息', '公积金利息', '负债利息', '年度现金流', '年末现金', '年末投资', '年末公积金', '年末负债', '房贷余额', '分期余额', '房产估值', '净资产'];
+    const h = ['年', '年龄', '阶段', '收入', '社保', '公积金个人', '公积金单位', '生活', '房租', '房贷', '物业', '水电', '大件', '购房', '公积金提取', '现金利息', '投资利息', '公积金利息', '负债利息', '年度现金流', '年末现金', '年末投资', '年末公积金', '年末负债', '房贷余额', '分期余额', '房产估值', '净资产'];
     const isSwitchYear = r => (p.p2StartAge > 0 && r.year === ageToYear(p.p2StartAge, p)) || (p.p3StartAge > 0 && r.year === ageToYear(p.p3StartAge, p));
     const isBuyYear = r => res.bought && r.year === p.buyYear;
     const rowStyle = r => isBuyYear(r)
       ? ' style="background:#edfbf8;font-weight:600"'
       : isSwitchYear(r) ? ' style="background:#fff7e6;font-weight:600"' : '';
-    const row = r => `<tr${rowStyle(r)}><td>${r.year}</td><td>${p.currentAge + r.year - 1}</td><td>${PHASE_LABEL[r.phase]}</td><td>${yuan(r.income)}</td><td>${yuan(r.social)}</td><td>${yuan(r.fundPersonal)}</td><td>${yuan(r.fundEmployer)}</td><td>${yuan(r.living)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.mortgage)}</td><td>${yuan(r.pm)}</td><td>${yuan(r.util)}</td><td>${yuan(r.big)}</td><td>${yuan(r.house)}</td><td>${yuan(r.fundWithdraw)}</td><td>${yuan(r.cashToInvest)}</td><td>${yuan(r.cashInterest)}</td><td>${yuan(r.investInterest)}</td><td>${yuan(r.fundInterest)}</td><td>${yuan(r.debtInterest)}</td><td>${yuan(r.netFlow)}</td><td>${yuan(r.cash)}</td><td>${yuan(r.invest)}</td><td>${yuan(r.fund)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.mortgageBal)}</td><td>${yuan(r.installments)}</td><td>${yuan(r.houseValue)}</td><td>${yuan(r.netWorth)}</td></tr>`;
+    const row = r => `<tr${rowStyle(r)}><td>${r.year}</td><td>${p.currentAge + r.year - 1}</td><td>${PHASE_LABEL[r.phase]}</td><td>${yuan(r.income)}</td><td>${yuan(r.social)}</td><td>${yuan(r.fundPersonal)}</td><td>${yuan(r.fundEmployer)}</td><td>${yuan(r.living)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.mortgage)}</td><td>${yuan(r.pm)}</td><td>${yuan(r.util)}</td><td>${yuan(r.big)}</td><td>${yuan(r.house)}</td><td>${yuan(r.fundWithdraw)}</td><td>${yuan(r.cashInterest)}</td><td>${yuan(r.investInterest)}</td><td>${yuan(r.fundInterest)}</td><td>${yuan(r.debtInterest)}</td><td>${yuan(r.netFlow)}</td><td>${yuan(r.cash)}</td><td>${yuan(r.invest)}</td><td>${yuan(r.fund)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.mortgageBal)}</td><td>${yuan(r.installments)}</td><td>${yuan(r.houseValue)}</td><td>${yuan(r.netWorth)}</td></tr>`;
     $('yearTable').innerHTML = `<thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${res.yearly.map(row).join('')}</tbody>`;
 
     if (!chart) return;
