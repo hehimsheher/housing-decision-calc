@@ -79,6 +79,8 @@
   .num { color: #0f9d8a; font-size: 25px; font-weight: 700; }
   .pos { color: #e5484d; }
   .neg { color: #12a150; }
+  .negflow { color: #cf1322; font-weight: 700; }
+  .posflow { color: #0f9d8a; font-weight: 700; }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
   @media (max-width: 700px) { .stats { grid-template-columns: repeat(2, 1fr); } }
   .stat { background: #f7faf9; border-radius: 10px; padding: 10px 12px; }
@@ -121,18 +123,14 @@
       <div class="field"><label>当前投资钱包（万元）</label><input id="investStart" type="number" step="1"></div>
       <div class="field"><label>当前负债（万元）</label><input id="debt" type="number" step="1"></div>
       <div class="field"><label>负债年利率（%，0 = 不计息）</label><input id="debtRate" type="number" step="0.1"></div>
-      <div class="fixed"><span>规划周期</span><b>60 年（固定）</b></div>
+      <div class="field"><label>规划年数（年，默认 60）</label><input id="horizon" type="number" step="1"></div>
     </div>
 
     <div class="card">
-      <h2>钱包与投资</h2>
-      <div class="field"><label>现金钱包年化利率（%，活期/零钱通）</label><input id="cashRate" type="number" step="0.1"></div>
-      <div class="field"><label>投资钱包期望年化收益率（%）</label><input id="investReturn" type="number" step="0.1"></div>
-      <div class="field"><label>投资情景上下浮动（百分点）</label><input id="investRange" type="number" step="0.1"></div>
-      <div class="field"><label>阶段1 每月投入投资（元）</label><input id="invest1" type="number" step="100"></div>
-      <div class="field"><label>阶段2 每月投入投资（元）</label><input id="invest2" type="number" step="100"></div>
-      <div class="field"><label>阶段3 每月投入投资（元）</label><input id="invest3" type="number" step="100"></div>
-      <p class="note">现金钱包按现金利率计息（默认 0.7%，活期/零钱通口径）；投资钱包按期望收益率计息（默认 5%），实际会波动，页面用"期望收益率 ± 上下浮动"给出保守/乐观情景。每个阶段单独设置"每月投入投资"的固定金额。每月先还负债、支付各项支出，然后从现金钱包按当前阶段的金额转入投资钱包；现金不够就只转能拿出的部分，剩余留在现金钱包。这样提前退休阶段没有工资时，也可以继续用已有现金投资。阶段 2 不启用时，阶段 2 的金额不会被使用。</p>
+      <h2>房租与日常开销（随时可改）</h2>
+      <div class="field"><label>同地段月租金（元）</label><input id="rent" type="number" step="100"></div>
+      <div class="field"><label>每月水电燃气取暖（元）</label><input id="utilities" type="number" step="10"></div>
+      <p class="note">房租是单独从每月现金流里扣的，不包含在"生活开销"里。不买房时全年付租金；买房前也按这个租金付；买房后租金停止，但水电继续支付。这两个字段始终可调，不受"启用买房"影响。如果你的"生活开销"里已经包含了房租，请把生活开销改成不含房租的金额，避免重复计算。</p>
     </div>
 
     <div class="card">
@@ -143,23 +141,34 @@
           <p>有工资收入，没有养老金；社保和公积金只在工作期缴纳。</p>
           <div class="field"><label>开始工作年龄（岁）</label><input id="p1StartAge" type="number" step="1"></div>
           <div class="field"><label>税前月薪（元）</label><input id="income" type="number" step="500"></div>
-          <div class="field"><label>每月其他生活开销（元）</label><input id="living1" type="number" step="100"></div>
+          <div class="field"><label>每月其他生活开销（元，不含房租水电）</label><input id="living1" type="number" step="100"></div>
+          <div class="field"><label>每月投入投资（元）</label><input id="invest1" type="number" step="100"></div>
         </div>
         <div class="phase p2">
           <h4><span class="tag">阶段 2</span>提前退休（无工资无养老金）</h4>
           <p>没有工资也没有养老金，生活开销全部从已有存款里扣，存款不够就变负债。</p>
           <div class="field"><label>提前退休年龄（岁，0 = 不启用）</label><input id="p2StartAge" type="number" step="1"></div>
-          <div class="field"><label>每月其他生活开销（元）</label><input id="living2" type="number" step="100"></div>
+          <div class="field"><label>每月其他生活开销（元，不含房租水电）</label><input id="living2" type="number" step="100"></div>
+          <div class="field"><label>每月投入投资（元）</label><input id="invest2" type="number" step="100"></div>
         </div>
         <div class="phase p3">
           <h4><span class="tag">阶段 3</span>领养老金</h4>
           <p>到龄开始领养老金，一直领到期末。</p>
           <div class="field"><label>领养老金年龄（岁，0 = 不启用）</label><input id="p3StartAge" type="number" step="1"></div>
           <div class="field"><label>每月养老金（元）</label><input id="pension" type="number" step="100"></div>
-          <div class="field"><label>每月其他生活开销（元）</label><input id="living3" type="number" step="100"></div>
+          <div class="field"><label>每月其他生活开销（元，不含房租水电）</label><input id="living3" type="number" step="100"></div>
+          <div class="field"><label>每月投入投资（元）</label><input id="invest3" type="number" step="100"></div>
         </div>
       </div>
-      <p class="note">阶段用年龄表示：当前年龄对应第 1 年，第 A 岁落在第 (A − 当前年龄 + 1) 年。养老金仍是手填假设值，没有按社保缴费年限自动推算。</p>
+      <p class="note">阶段用年龄表示：当前年龄对应第 1 年，第 A 岁落在第 (A − 当前年龄 + 1) 年。养老金仍是手填假设值，没有按社保缴费年限自动推算。每个阶段的"每月投入投资"就在该阶段里单独设置：每月先还负债、支付各项支出，然后从现金钱包按当前阶段的金额转入投资钱包；现金不够就只转能拿出的部分，剩余留在现金钱包。</p>
+    </div>
+
+    <div class="card">
+      <h2>钱包利率与投资收益率</h2>
+      <div class="field"><label>现金钱包年化利率（%，活期/零钱通）</label><input id="cashRate" type="number" step="0.1"></div>
+      <div class="field"><label>投资钱包期望年化收益率（%）</label><input id="investReturn" type="number" step="0.1"></div>
+      <div class="field"><label>投资情景上下浮动（百分点）</label><input id="investRange" type="number" step="0.1"></div>
+      <p class="note">现金钱包按现金利率计息（默认 0.7%，活期/零钱通口径）；投资钱包按期望收益率计息（默认 5%），实际会波动，页面用"期望收益率 ± 上下浮动"给出保守/乐观情景。每月投入投资的金额在「收入与三阶段」里按阶段 1/2/3 分别设置，不在这里。</p>
     </div>
 
     <div class="card">
@@ -185,17 +194,10 @@
     </div>
 
     <div class="card">
-      <h2>租房与日常开销</h2>
-      <div class="field"><label>同地段月租金（元）</label><input id="rent" type="number" step="100"></div>
-      <div class="field"><label>每月水电燃气取暖（元）</label><input id="utilities" type="number" step="10"></div>
-      <p class="note">不买房时全年付租金；买房前也按这个租金付；买房后租金停止，但水电燃气取暖继续支付。这两个字段始终可调，不受"启用买房"影响。</p>
-    </div>
-
-    <div class="card">
       <h2>住房方案（可选，可启停）</h2>
       <label class="checkline"><input id="buyHouse" type="checkbox"> 启用买房方案（不勾选 = 一直租房）</label>
       <div id="houseFields">
-        <div class="field"><label>购房年份（第 1～60 年）</label><input id="buyYear" type="number" step="1"></div>
+        <div class="field"><label>购房年份（第几年）</label><input id="buyYear" type="number" step="1"></div>
         <div class="field"><label>房屋总价（万元）</label><input id="housePrice" type="number" step="1"></div>
         <div class="field"><label>首付比例（%）</label><input id="downRatio" type="number" step="1"></div>
         <div class="field"><label>购房税费比例（%）</label><input id="taxRate" type="number" step="0.1"></div>
@@ -204,7 +206,7 @@
         <div class="field"><label>每月物业费（元）</label><input id="pmFee" type="number" step="10"></div>
         <div class="field"><label>房产年增值率（%，0 = 不涨不跌）</label><input id="houseGrowth" type="number" step="0.1"></div>
         <div class="field"><label>期末卖房交易成本（%）</label><input id="sellCost" type="number" step="0.1"></div>
-        <p class="note">买房前付租金；买房后不再付租金，改为月供 + 物业费。租金和水电在「租房与日常开销」卡片里设置，不受"启用买房"影响。公积金贷款/组合贷可以把实际综合利率填进"房贷年利率"。不启用买房时，这一整块买房参数不参与计算。</p>
+        <p class="note">买房前付租金；买房后不再付租金，改为月供 + 物业费。租金和水电在「房租与日常开销」卡片里设置，不受"启用买房"影响。公积金贷款/组合贷可以把实际综合利率填进"房贷年利率"。不启用买房时，这一整块买房参数不参与计算。</p>
       </div>
     </div>
 
@@ -220,6 +222,12 @@
 
   <main>
     <div id="warnBox"></div>
+
+    <div class="card">
+      <h2>每月现金流拆解（房租已单独计入）</h2>
+      <div class="scroll"><table class="yt"><thead><tr><th>阶段</th><th>月收入</th><th>社保</th><th>公积金个人</th><th>生活开销</th><th>房租</th><th>房贷</th><th>物业</th><th>水电</th><th>每月净结余</th></tr></thead><tbody id="monthlyTable"></tbody></table></div>
+      <p class="note" id="monthlyNote"></p>
+    </div>
 
     <div class="card">
       <div class="verdict" id="verdict"></div>
@@ -271,14 +279,14 @@
 
 <footer>
   <div class="card">
-    <p>说明：这是从当前年龄出发的 60 年现金流推演，起点是"当前现金钱包 / 当前投资钱包 / 当前负债 / 当前公积金余额"，不是从零开始。</p>
+    <p>说明：这是从当前年龄出发的现金流推演，规划年数可改（默认 60 年）；起点是"当前现金钱包 / 当前投资钱包 / 当前负债 / 当前公积金余额"，不是从零开始。</p>
     <p>说明：税前月薪先扣社保个人部分和公积金个人部分；社保扣掉后不形成资产，公积金个人部分进入自己的公积金账户。单位公积金是单位额外缴的，不从工资扣，也进入公积金账户；单位社保部分不进个人现金流。</p>
     <p>说明：按《住房公积金管理条例》和各地公积金中心口径，离休、退休可一次性提取公积金账户全部余额并销户；未到法定退休年龄提前退休的，通常需退休证或养老金核定等材料。页面按你选的"公积金提取时点"把余额转入现金钱包，不提取则继续留在公积金账户计息。</p>
     <p>说明：买房是可选方案，可以随时停用。买房时可以用公积金余额优先支付首付和税费；房贷按等额本息、固定利率计算，不提前还款。期末同时给出"继续持有房产"和"卖房扣交易成本"两个口径。</p>
     <p>说明：大件支出支持一次付清或分期。分期按首付 + 等额本息估算，利息计入成本；金额填负数按一次性收入处理。</p>
     <p>说明：现金钱包按现金利率（默认 0.7%）计息，投资钱包按期望收益率计息；两者都只是假设，投资钱包实际会波动，不保证收益。每月先还负债和支付支出，然后从现金钱包按当前阶段的"每月投入投资"金额转入投资钱包，现金不够就只转能拿出的部分；剩余留在现金钱包。当前负债和现金不足形成的透支欠款按"负债年利率"计息，正现金流优先还债。</p>
     <p>提醒：页面不扣个人所得税，月薪按税前口径填；社保和公积金比例直接乘该收入，未设缴费基数上下限，也不校验缴纳年限对购房资格/贷款额度的影响。</p>
-    <p>提醒：本页不考虑通货膨胀、工资增长、租金上涨和房屋维修/翻新费用，所有收入、租金、开销都是固定值；图上和表里的金额都是名义值，60 年后的 1000 万不等于今天的 1000 万。结果用于辅助思考，不构成投资建议。</p>
+    <p>提醒：本页不考虑通货膨胀、工资增长、租金上涨和房屋维修/翻新费用，所有收入、租金、开销都是固定值；图上和表里的金额都是名义值，规划期末的 1000 万不等于今天的 1000 万。结果用于辅助思考，不构成投资建议。</p>
   </div>
 </footer>
 
@@ -287,6 +295,7 @@
   const HORIZON = 60;
 
   const DEFAULTS = {
+    horizon: 60,
     currentAge: 23, cashStart: 0, investStart: 0, debt: 0, debtRate: 4,
     cashRate: 0.7, investReturn: 5, investRange: 1, invest1: 1000, invest2: 0, invest3: 0,
     p1StartAge: 23, income: 7000, living1: 3000,
@@ -299,13 +308,14 @@
   };
 
   const LIMITS = {
+    horizon: [1, 80],
     currentAge: [1, 100], cashStart: [0, 1e4], investStart: [0, 1e4], debt: [0, 1e4], debtRate: [0, 30],
     cashRate: [-10, 30], investReturn: [-100, 100], investRange: [0, 20], invest1: [0, 1e6], invest2: [0, 1e6], invest3: [0, 1e6],
     p1StartAge: [0, 120], income: [0, 1e7], living1: [0, 1e6],
     p2StartAge: [0, 120], living2: [0, 1e6],
     p3StartAge: [0, 120], pension: [0, 1e6], living3: [0, 1e6],
     socialRate: [0, 50], fundPersonal: [0, 50], fundEmployer: [0, 50], fundRate: [-10, 30], fundBalance: [0, 1e4],
-    buyYear: [1, HORIZON], housePrice: [1, 1e4], downRatio: [0, 100], taxRate: [0, 20],
+    buyYear: [1, 80], housePrice: [1, 1e4], downRatio: [0, 100], taxRate: [0, 20],
     mortgageRate: [0, 30], loanYears: [1, 50], pmFee: [0, 1e5], utilities: [0, 1e5], rent: [0, 1e6],
     houseGrowth: [-20, 30], sellCost: [0, 20]
   };
@@ -350,7 +360,7 @@
 
   const BIG_DEFAULTS = [];
   const BIG_LIMITS = {
-    amount: [-1e4, 1e4], year: [1, HORIZON], downRatio: [0, 100], years: [0, 30], rate: [0, 30]
+    amount: [-1e4, 1e4], year: [1, 80], downRatio: [0, 100], years: [0, 30], rate: [0, 30]
   };
   let bigItems = BIG_DEFAULTS.map(x => ({ ...x }));
 
@@ -384,23 +394,28 @@
       p[k] = clamped;
       if (isFinite(raw) && clamped !== raw) el.value = String(clamped);
     }
-    ['currentAge', 'p1StartAge', 'p2StartAge', 'p3StartAge', 'buyYear', 'loanYears'].forEach(k => {
+    ['currentAge', 'p1StartAge', 'p2StartAge', 'p3StartAge', 'buyYear', 'loanYears', 'horizon'].forEach(k => {
       p[k] = Math.round(p[k]);
       const el = $(k);
       const shown = parseFloat(el.value);
       if (isFinite(shown) && shown !== p[k]) el.value = String(p[k]);
     });
-    p.horizon = HORIZON;
+    // 购房年份不要超过规划年数
+    if (p.buyYear > p.horizon) {
+      p.buyYear = p.horizon;
+      $('buyYear').value = String(p.buyYear);
+    }
     return p;
   }
 
-  function readBigItems() {
+  function readBigItems(p) {
+    const maxYear = p ? p.horizon : 80;
     return bigItems.map((it, idx) => {
       const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
       return {
         name: String(it.name || '').trim() || `大件 ${idx + 1}`,
         amount: clamp(num(it.amount, 0), BIG_LIMITS.amount[0], BIG_LIMITS.amount[1]),
-        year: Math.round(clamp(num(it.year, 1), BIG_LIMITS.year[0], BIG_LIMITS.year[1])),
+        year: Math.round(clamp(num(it.year, 1), 1, maxYear)),
         downRatio: clamp(num(it.downRatio, 0), 0, 100),
         years: Math.round(clamp(num(it.years, 0), 0, 30)),
         rate: clamp(num(it.rate, 0), 0, 30)
@@ -685,7 +700,7 @@
 
   function render() {
     const p = readInputs();
-    const bigs = readBigItems();
+    const bigs = readBigItems(p);
     const res = simulate(p, bigs);
     const rentOnly = p.buyHouse ? simulate({ ...p, buyHouse: false }, bigs) : null;
     const lowReturn = Math.max(-100, p.investReturn - p.investRange);
@@ -695,13 +710,36 @@
     const f = res.final;
     const endAge = f.endAge;
 
+    // 每月现金流拆解：把房租、水电、社保、公积金、房贷、物业逐项列出，方便核对
+    const buyMonth = p.buyHouse ? p.buyYear * 12 : Infinity;
+    const afterBuyAt = m => p.buyHouse && m > buyMonth;
+    const mortgageAt = m => afterBuyAt(m) && m <= buyMonth + p.loanYears * 12 ? res.mortgagePay : 0;
+    const pmAt = m => afterBuyAt(m) ? p.pmFee : 0;
+    const buildStage = (label, enabled, startAge, income, social, fundP, living) => {
+      if (!enabled) return { label, enabled: false };
+      const m = Math.max(1, ageToMonth(startAge, p));
+      const rent = (!p.buyHouse || m < buyMonth) ? p.rent : 0;
+      const mortgage = mortgageAt(m);
+      const pm = pmAt(m);
+      const net = income - social - fundP - living - rent - mortgage - pm - p.utilities;
+      return { label, enabled: true, m, income, social, fundP, living, rent, mortgage, pm, util: p.utilities, net };
+    };
+    const stageRows = [
+      buildStage('阶段 1 工作期', true, p.p1StartAge, p.income,
+        p.paySocial ? p.income * p.socialRate / 100 : 0,
+        p.payFund ? p.income * p.fundPersonal / 100 : 0, p.living1),
+      buildStage('阶段 2 提前退休', p.p2StartAge > 0, p.p2StartAge, 0, 0, 0, p.living2),
+      buildStage('阶段 3 领养老金', p.p3StartAge > 0, p.p3StartAge, p.pension, 0, 0, p.living3)
+    ];
+    const s1 = stageRows[0];
+
     $('houseFields').style.display = p.buyHouse ? '' : 'none';
     $('keyHouse').style.display = p.buyHouse ? '' : 'none';
 
     $('subtitle').textContent = `现年 ${p.currentAge} 岁 → 第 ${p.horizon} 年末 ${endAge} 岁｜现金 ${w(p.cashStart * 1e4)} 万 + 投资 ${w(p.investStart * 1e4)} 万 − 负债 ${w(p.debt * 1e4)} 万`;
 
     const warn = f.netHold < 0
-      ? `压力测试结果：按当前参数，期末净资产为负。说明工资/养老金不足以覆盖房租、生活开销和利息，负债会持续累积。可以调高收入、降低开销，或调整买房/大件/投资参数再试。`
+      ? `压力测试结果：按当前参数，期末净资产为负。${s1.enabled ? `阶段 1 每月到手 ${yuan(s1.income - s1.social - s1.fundP)} 元，生活 ${yuan(s1.living)} + 房租 ${yuan(s1.rent)} + 水电 ${yuan(s1.util)}${s1.mortgage || s1.pm ? ` + 房贷 ${yuan(s1.mortgage)} + 物业 ${yuan(s1.pm)}` : ''} = ${yuan(s1.living + s1.rent + s1.util + s1.mortgage + s1.pm)} 元，每月${s1.net < 0 ? '缺口' : '结余'} ${yuan(Math.abs(s1.net))} 元。` : ''}负债会持续累积。可以调高收入、降低开销（尤其是房租/生活/水电），或调整买房、大件、投资参数再试。`
       : '';
     $('warnBox').innerHTML = warn ? `<div class="warn">${warn}</div>` : '';
 
@@ -730,6 +768,7 @@
       `${p.horizon} 年后（${endAge} 岁），预计净资产 <span class="num">${w(f.netHold)}</span> 万元（${holdingLabel}）。<br>` +
       (res.bought ? `若期末卖房（扣 ${p.sellCost}% 交易成本），净得 <span class="num">${w(f.netSell)}</span> 万元。<br>` : '') +
       `<span style="font-size:13px;color:#64748b">${breakdown}</span>` + rentLine + volLine + walletMoveLine +
+      `<br><span style="font-size:13px;color:#64748b">每月房租 ${yuan(s1.rent)} 元，${p.horizon} 年累计房租 ${w(res.totals.rent)} 万元（房租单独扣，不含在生活开销里）。</span>` +
       `<br><span style="font-size:13px;color:#64748b">${housingDesc}${bigDesc ? `；大件：${bigDesc}` : ''}。</span>`;
 
     const stats = [
@@ -737,6 +776,8 @@
       ['当前现金钱包', `${w(p.cashStart * 1e4)} 万元`],
       ['当前投资钱包', `${w(p.investStart * 1e4)} 万元`],
       ['当前负债', `${w(p.debt * 1e4)} 万元`],
+      ['阶段 1 每月净结余', `${yuan(s1.net)} 元`],
+      ['累计房租支出', `${w(res.totals.rent)} 万元`],
       ['期末现金钱包', `${w(f.cash)} 万元`],
       ['期末投资钱包（期望）', `${w(f.invest)} 万元`],
       ['期末公积金', `${w(f.fund)} 万元`],
@@ -765,6 +806,20 @@
       ['现金钱包最低余额', `${w(f.minCashWallet)} 万元`]
     ];
     $('stats').innerHTML = stats.map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
+
+    // 每月现金流拆解表
+    $('monthlyTable').innerHTML = stageRows.map(s => {
+      if (!s.enabled) {
+        return `<tr><td>${s.label}</td><td colspan="9" style="text-align:left;color:#94a3b8">未启用（年龄填 0）</td></tr>`;
+      }
+      const cls = s.net < 0 ? 'negflow' : 'posflow';
+      return `<tr><td>${s.label}</td><td>${yuan(s.income)}</td><td>−${yuan(s.social)}</td><td>−${yuan(s.fundP)}</td><td>−${yuan(s.living)}</td><td>−${yuan(s.rent)}</td><td>−${yuan(s.mortgage)}</td><td>−${yuan(s.pm)}</td><td>−${yuan(s.util)}</td><td class="${cls}">${yuan(s.net)}</td></tr>`;
+    }).join('');
+    const s1Take = s1.income - s1.social - s1.fundP;
+    const s1Spend = s1.living + s1.rent + s1.util + s1.mortgage + s1.pm;
+    $('monthlyNote').innerHTML = s1.enabled
+      ? `阶段 1 每月：税前 ${yuan(s1.income)} − 社保 ${yuan(s1.social)} − 公积金个人 ${yuan(s1.fundP)} = 到手 ${yuan(s1Take)} 元；再减生活 ${yuan(s1.living)}、房租 ${yuan(s1.rent)}、水电 ${yuan(s1.util)}${s1.mortgage || s1.pm ? `、房贷 ${yuan(s1.mortgage)}、物业 ${yuan(s1.pm)}` : ''}，合计支出 ${yuan(s1Spend)} 元 = 每月${s1.net >= 0 ? '结余' : '缺口'} <b class="${s1.net < 0 ? 'negflow' : 'posflow'}">${yuan(Math.abs(s1.net))}</b> 元。${p.horizon} 年累计房租 ${w(res.totals.rent)} 万元。表里按各阶段第一个月计算；大件一次性支出和分期月供不在这一行，见下方年度明细。`
+      : '';
 
     const assetRows = [
       ['当前现金钱包', p.cashStart * 1e4],
@@ -926,7 +981,8 @@
     const raw = parseFloat(e.target.value);
     if (!isFinite(raw)) return;
     const lim = BIG_LIMITS[field];
-    let v = clamp(raw, lim[0], lim[1]);
+    const max = field === 'year' ? Math.min(lim[1], parseInt($('horizon').value, 10) || 60) : lim[1];
+    let v = clamp(raw, lim[0], max);
     if (field === 'year' || field === 'years') v = Math.round(v);
     bigItems[idx][field] = v;
     if (v !== raw) e.target.value = String(v);
