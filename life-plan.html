@@ -124,6 +124,7 @@
       <div class="field"><label>当前负债（万元）</label><input id="debt" type="number" step="1"></div>
       <div class="field"><label>负债年利率（%，0 = 不计息）</label><input id="debtRate" type="number" step="0.1"></div>
       <div class="field"><label>规划年数（年，默认 60）</label><input id="horizon" type="number" step="1"></div>
+      <p class="note">默认是一套示例参数：25 岁、毕业 3 年左右、税前月薪 9000 元、现金 2 万、投资 1 万。请把这些数字改成你自己的实际情况。</p>
     </div>
 
     <div class="card">
@@ -296,14 +297,14 @@
 
   const DEFAULTS = {
     horizon: 60,
-    currentAge: 23, cashStart: 0, investStart: 0, debt: 0, debtRate: 4,
-    cashRate: 0.7, investReturn: 5, investRange: 1, invest1: 1000, invest2: 0, invest3: 0,
-    p1StartAge: 23, income: 7000, living1: 3000,
+    currentAge: 25, cashStart: 2, investStart: 1, debt: 0, debtRate: 4,
+    cashRate: 0.7, investReturn: 5, investRange: 1, invest1: 1200, invest2: 0, invest3: 0,
+    p1StartAge: 22, income: 9000, living1: 3000,
     p2StartAge: 0, living2: 3000,
-    p3StartAge: 65, pension: 3500, living3: 3000,
-    socialRate: 10.5, fundPersonal: 5.8, fundEmployer: 5.8, fundRate: 1, fundBalance: 0, paySocial: true, payFund: true, useFund: true, fundWithdrawTiming: 'pension',
+    p3StartAge: 65, pension: 4000, living3: 3000,
+    socialRate: 10.5, fundPersonal: 7, fundEmployer: 7, fundRate: 1.5, fundBalance: 2, paySocial: true, payFund: true, useFund: true, fundWithdrawTiming: 'pension',
     buyHouse: false, buyYear: 5, housePrice: 120, downRatio: 30, taxRate: 1.5,
-    mortgageRate: 3, loanYears: 30, pmFee: 300, utilities: 200, rent: 1500,
+    mortgageRate: 3, loanYears: 30, pmFee: 300, utilities: 300, rent: 2500,
     houseGrowth: 0, sellCost: 3
   };
 
