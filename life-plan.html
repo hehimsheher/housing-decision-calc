@@ -131,7 +131,8 @@
       <h2>房租与日常开销（随时可改）</h2>
       <div class="field"><label>同地段月租金（元）</label><input id="rent" type="number" step="100"></div>
       <div class="field"><label>每月水电燃气取暖（元）</label><input id="utilities" type="number" step="10"></div>
-      <p class="note">房租是单独从每月现金流里扣的，不包含在"生活开销"里。不买房时全年付租金；买房前也按这个租金付；买房后租金停止，但水电继续支付。这两个字段始终可调，不受"启用买房"影响。如果你的"生活开销"里已经包含了房租，请把生活开销改成不含房租的金额，避免重复计算。</p>
+      <label class="checkline"><input id="useFundRent" type="checkbox"> 房租优先用公积金余额支付</label>
+      <p class="note">房租是单独从每月现金流里扣的，不包含在"生活开销"里。不买房时全年付租金；买房前也按这个租金付；买房后租金停止，但水电继续支付。这两个字段始终可调，不受"启用买房"影响。勾选上面的选项后，每月房租先扣公积金余额，不足部分再从现金钱包扣；公积金支付房租属于资产内部转移，不计入年度现金流。如果你的"生活开销"里已经包含了房租，请把生活开销改成不含房租的金额，避免重复计算。</p>
     </div>
 
     <div class="card">
@@ -262,7 +263,7 @@
     <div class="card">
       <h2>累计收支（万元）</h2>
       <table><tbody id="costTable"></tbody></table>
-      <p class="note">个人公积金是工资到公积金账户的转移，不计入"年度现金流"；单位公积金是额外进入公积金账户的钱。公积金退休提取也是钱包内部转移，不计入年度现金流。年度现金流 = 收入 + 单位公积金 + 现金利息 + 投资利息 + 公积金利息 − 社保 − 生活 − 房租 − 房贷 − 物业 − 水电 − 大件 − 购房首付税费 − 负债利息。</p>
+      <p class="note">个人公积金是工资到公积金账户的转移，不计入"年度现金流"；单位公积金是额外进入公积金账户的钱。公积金支付房租、公积金退休提取也都是钱包内部转移，不计入年度现金流。年度现金流 = 收入 + 单位公积金 + 现金利息 + 投资利息 + 公积金利息 − 社保 − 生活 − 房租 − 房贷 − 物业 − 水电 − 大件 − 购房首付税费 − 负债利息。</p>
     </div>
 
     <div class="card">
@@ -273,7 +274,7 @@
     <div class="card">
       <h2>每年收支与资产明细（单位：元）</h2>
       <div class="scroll"><table class="yt" id="yearTable"></table></div>
-      <p class="note">"大件"含一次性付款/首付和分期月供；"购房"是首付 + 税费的现金支出；"公积金个人"和"公积金单位"是账户流入，个人部分同时从现金扣除。"公积金提取"是退休时把公积金余额转入现金钱包，属于内部转移，不计入年度现金流。年末现金是现金钱包，年末投资是投资钱包，两者支出顺序为现金钱包 → 投资钱包 → 负债。购房当年和阶段切换当年会高亮。</p>
+      <p class="note">"大件"含一次性付款/首付和分期月供；"购房"是首付 + 税费的现金支出；"公积金个人"和"公积金单位"是账户流入，个人部分同时从现金扣除。"公积金付租"是房租中由公积金余额支付的部分，属于内部转移，不计入年度现金流；"公积金提取"是退休时把公积金余额转入现金钱包，也属于内部转移。年末现金是现金钱包，年末投资是投资钱包，两者支出顺序为现金钱包 → 投资钱包 → 负债。购房当年和阶段切换当年会高亮。</p>
     </div>
   </main>
 </div>
@@ -282,7 +283,7 @@
   <div class="card">
     <p>说明：这是从当前年龄出发的现金流推演，规划年数可改（默认 60 年）；起点是"当前现金钱包 / 当前投资钱包 / 当前负债 / 当前公积金余额"，不是从零开始。</p>
     <p>说明：税前月薪先扣社保个人部分和公积金个人部分；社保扣掉后不形成资产，公积金个人部分进入自己的公积金账户。单位公积金是单位额外缴的，不从工资扣，也进入公积金账户；单位社保部分不进个人现金流。</p>
-    <p>说明：按《住房公积金管理条例》和各地公积金中心口径，离休、退休可一次性提取公积金账户全部余额并销户；未到法定退休年龄提前退休的，通常需退休证或养老金核定等材料。页面按你选的"公积金提取时点"把余额转入现金钱包，不提取则继续留在公积金账户计息。</p>
+    <p>说明：按《住房公积金管理条例》和各地公积金中心口径，公积金可用于租房提取和购房。页面提供"房租优先用公积金余额"和"购房时优先用公积金余额"两个开关：房租每月先从公积金扣，不足部分再扣现金；买房首付和税费也先扣公积金。公积金支付房租/首付属于资产内部转移，不计入年度现金流。离休、退休可一次性提取账户全部余额并销户；未到法定退休年龄提前退休的，通常需退休证或养老金核定等材料。页面按你选的"公积金提取时点"把余额转入现金钱包，不提取则继续留在公积金账户计息。</p>
     <p>说明：买房是可选方案，可以随时停用。买房时可以用公积金余额优先支付首付和税费；房贷按等额本息、固定利率计算，不提前还款。期末同时给出"继续持有房产"和"卖房扣交易成本"两个口径。</p>
     <p>说明：大件支出支持一次付清或分期。分期按首付 + 等额本息估算，利息计入成本；金额填负数按一次性收入处理。</p>
     <p>说明：现金钱包按现金利率（默认 0.7%）计息，投资钱包按期望收益率计息；两者都只是假设，投资钱包实际会波动，不保证收益。每月先还负债和支付支出，然后从现金钱包按当前阶段的"每月投入投资"金额转入投资钱包，现金不够就只转能拿出的部分；剩余留在现金钱包。当前负债和现金不足形成的透支欠款按"负债年利率"计息，正现金流优先还债。</p>
@@ -302,7 +303,7 @@
     p1StartAge: 22, income: 6000, living1: 2300,
     p2StartAge: 0, living2: 2300,
     p3StartAge: 65, pension: 3500, living3: 2300,
-    socialRate: 10.5, fundPersonal: 7, fundEmployer: 7, fundRate: 1.5, fundBalance: 2, paySocial: true, payFund: true, useFund: true, fundWithdrawTiming: 'pension',
+    socialRate: 10.5, fundPersonal: 7, fundEmployer: 7, fundRate: 1.5, fundBalance: 2, paySocial: true, payFund: true, useFund: true, useFundRent: true, fundWithdrawTiming: 'pension',
     buyHouse: false, buyYear: 5, housePrice: 120, downRatio: 30, taxRate: 1.5,
     mortgageRate: 3, loanYears: 30, pmFee: 300, utilities: 200, rent: 1800,
     houseGrowth: 0, sellCost: 3
@@ -457,7 +458,7 @@
     let houseCostTotal = 0, fundUsedForHouse = 0;
     let mortgagePaid = 0, mortgageInterest = 0;
     let incomeTotal = 0, socialTotal = 0, fundPersonalTotal = 0, fundEmployerTotal = 0;
-    let livingTotal = 0, rentTotal = 0, pmTotal = 0, utilTotal = 0;
+    let livingTotal = 0, rentTotal = 0, fundUsedRentTotal = 0, pmTotal = 0, utilTotal = 0;
     let cashInterestTotal = 0, investInterestTotal = 0, fundInterestTotal = 0, debtInterestTotal = 0;
     let fundWithdrawnTotal = 0, investedTotal = 0;
     let minCashWallet = cash;
@@ -482,7 +483,7 @@
     });
 
     const zeroAcc = () => ({
-      income: 0, social: 0, fundPersonal: 0, fundEmployer: 0, living: 0, rent: 0,
+      income: 0, social: 0, fundPersonal: 0, fundEmployer: 0, living: 0, rent: 0, fundUsedRent: 0,
       mortgage: 0, pm: 0, util: 0, big: 0, bigIncome: 0, house: 0,
       cashInterest: 0, investInterest: 0, fundInterest: 0, debtInterest: 0,
       fundWithdraw: 0
@@ -547,6 +548,15 @@
 
       let rentNow = 0;
       if (!p.buyHouse || m < buyMonth) rentNow = p.rent;
+      // 房租优先用公积金余额：从公积金账户转到现金钱包再支付，属于内部转移
+      let rentFromFund = 0;
+      if (rentNow > 0 && p.useFundRent && fund > 0) {
+        rentFromFund = Math.min(fund, rentNow);
+        fund -= rentFromFund;
+        cash += rentFromFund;
+        fundUsedRentTotal += rentFromFund;
+        acc.fundUsedRent += rentFromFund;
+      }
       flow -= rentNow;
       acc.rent += rentNow;
       rentTotal += rentNow;
@@ -684,7 +694,7 @@
       },
       totals: {
         income: incomeTotal, social: socialTotal, fundPersonal: fundPersonalTotal, fundEmployer: fundEmployerTotal,
-        living: livingTotal, rent: rentTotal, mortgage: mortgagePaid, mortgageInterest,
+        living: livingTotal, rent: rentTotal, fundUsedRent: fundUsedRentTotal, mortgage: mortgagePaid, mortgageInterest,
         pm: pmTotal, util: utilTotal, house: houseCostTotal, fundUsed: fundUsedForHouse,
         bigDown: events.reduce((s, e) => s + e.downPaid, 0),
         bigPayment: events.reduce((s, e) => s + e.paid, 0),
@@ -779,6 +789,7 @@
       ['当前负债', `${w(p.debt * 1e4)} 万元`],
       ['阶段 1 每月净结余', `${yuan(s1.net)} 元`],
       ['累计房租支出', `${w(res.totals.rent)} 万元`],
+      ['其中：公积金支付房租', `${w(res.totals.fundUsedRent)} 万元`],
       ['期末现金钱包', `${w(f.cash)} 万元`],
       ['期末投资钱包（期望）', `${w(f.invest)} 万元`],
       ['期末公积金', `${w(f.fund)} 万元`],
@@ -819,7 +830,7 @@
     const s1Take = s1.income - s1.social - s1.fundP;
     const s1Spend = s1.living + s1.rent + s1.util + s1.mortgage + s1.pm;
     $('monthlyNote').innerHTML = s1.enabled
-      ? `阶段 1 每月：税前 ${yuan(s1.income)} − 社保 ${yuan(s1.social)} − 公积金个人 ${yuan(s1.fundP)} = 到手 ${yuan(s1Take)} 元；再减生活 ${yuan(s1.living)}、房租 ${yuan(s1.rent)}、水电 ${yuan(s1.util)}${s1.mortgage || s1.pm ? `、房贷 ${yuan(s1.mortgage)}、物业 ${yuan(s1.pm)}` : ''}，合计支出 ${yuan(s1Spend)} 元 = 每月${s1.net >= 0 ? '结余' : '缺口'} <b class="${s1.net < 0 ? 'negflow' : 'posflow'}">${yuan(Math.abs(s1.net))}</b> 元。${p.horizon} 年累计房租 ${w(res.totals.rent)} 万元。表里按各阶段第一个月计算；大件一次性支出和分期月供不在这一行，见下方年度明细。`
+      ? `阶段 1 每月：税前 ${yuan(s1.income)} − 社保 ${yuan(s1.social)} − 公积金个人 ${yuan(s1.fundP)} = 到手 ${yuan(s1Take)} 元；再减生活 ${yuan(s1.living)}、房租 ${yuan(s1.rent)}、水电 ${yuan(s1.util)}${s1.mortgage || s1.pm ? `、房贷 ${yuan(s1.mortgage)}、物业 ${yuan(s1.pm)}` : ''}，合计支出 ${yuan(s1Spend)} 元 = 每月${s1.net >= 0 ? '结余' : '缺口'} <b class="${s1.net < 0 ? 'negflow' : 'posflow'}">${yuan(Math.abs(s1.net))}</b> 元。${p.horizon} 年累计房租 ${w(res.totals.rent)} 万元。表里按各阶段第一个月计算；大件一次性支出和分期月供不在这一行，见下方年度明细。${p.useFundRent ? '房租会先从公积金余额扣，不足部分才从现金扣；上表房租是应缴金额，公积金实际支付额见年度明细的“公积金付租”列。' : ''}`
       : '';
 
     const assetRows = [
@@ -848,6 +859,7 @@
       ['公积金单位缴纳合计', res.totals.fundEmployer],
       ['生活开销合计', res.totals.living],
       ['房租合计', res.totals.rent],
+      ['其中：公积金支付房租（内部转移）', res.totals.fundUsedRent],
       ['房贷月供合计', res.totals.mortgage],
       ['其中房贷利息', res.totals.mortgageInterest],
       ['物业费合计', res.totals.pm],
@@ -900,13 +912,13 @@
       $('bigTable').innerHTML = `<div class="scroll"><table class="yt"><thead><tr><th>名称</th><th>年份</th><th>方式</th><th>金额</th><th>首付/一次付清</th><th>贷款</th><th>月供（元）</th><th>利息</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }
 
-    const h = ['年', '年龄', '阶段', '收入', '社保', '公积金个人', '公积金单位', '生活', '房租', '房贷', '物业', '水电', '大件', '购房', '公积金提取', '现金利息', '投资利息', '公积金利息', '负债利息', '年度现金流', '年末现金', '年末投资', '年末公积金', '年末负债', '房贷余额', '分期余额', '房产估值', '净资产'];
+    const h = ['年', '年龄', '阶段', '收入', '社保', '公积金个人', '公积金单位', '生活', '房租', '公积金付租', '房贷', '物业', '水电', '大件', '购房', '公积金提取', '现金利息', '投资利息', '公积金利息', '负债利息', '年度现金流', '年末现金', '年末投资', '年末公积金', '年末负债', '房贷余额', '分期余额', '房产估值', '净资产'];
     const isSwitchYear = r => (p.p2StartAge > 0 && r.year === ageToYear(p.p2StartAge, p)) || (p.p3StartAge > 0 && r.year === ageToYear(p.p3StartAge, p));
     const isBuyYear = r => res.bought && r.year === p.buyYear;
     const rowStyle = r => isBuyYear(r)
       ? ' style="background:#edfbf8;font-weight:600"'
       : isSwitchYear(r) ? ' style="background:#fff7e6;font-weight:600"' : '';
-    const row = r => `<tr${rowStyle(r)}><td>${r.year}</td><td>${p.currentAge + r.year - 1}</td><td>${PHASE_LABEL[r.phase]}</td><td>${yuan(r.income)}</td><td>${yuan(r.social)}</td><td>${yuan(r.fundPersonal)}</td><td>${yuan(r.fundEmployer)}</td><td>${yuan(r.living)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.mortgage)}</td><td>${yuan(r.pm)}</td><td>${yuan(r.util)}</td><td>${yuan(r.big)}</td><td>${yuan(r.house)}</td><td>${yuan(r.fundWithdraw)}</td><td>${yuan(r.cashInterest)}</td><td>${yuan(r.investInterest)}</td><td>${yuan(r.fundInterest)}</td><td>${yuan(r.debtInterest)}</td><td>${yuan(r.netFlow)}</td><td>${yuan(r.cash)}</td><td>${yuan(r.invest)}</td><td>${yuan(r.fund)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.mortgageBal)}</td><td>${yuan(r.installments)}</td><td>${yuan(r.houseValue)}</td><td>${yuan(r.netWorth)}</td></tr>`;
+    const row = r => `<tr${rowStyle(r)}><td>${r.year}</td><td>${p.currentAge + r.year - 1}</td><td>${PHASE_LABEL[r.phase]}</td><td>${yuan(r.income)}</td><td>${yuan(r.social)}</td><td>${yuan(r.fundPersonal)}</td><td>${yuan(r.fundEmployer)}</td><td>${yuan(r.living)}</td><td>${yuan(r.rent)}</td><td>${yuan(r.fundUsedRent)}</td><td>${yuan(r.mortgage)}</td><td>${yuan(r.pm)}</td><td>${yuan(r.util)}</td><td>${yuan(r.big)}</td><td>${yuan(r.house)}</td><td>${yuan(r.fundWithdraw)}</td><td>${yuan(r.cashInterest)}</td><td>${yuan(r.investInterest)}</td><td>${yuan(r.fundInterest)}</td><td>${yuan(r.debtInterest)}</td><td>${yuan(r.netFlow)}</td><td>${yuan(r.cash)}</td><td>${yuan(r.invest)}</td><td>${yuan(r.fund)}</td><td>${yuan(r.debt)}</td><td>${yuan(r.mortgageBal)}</td><td>${yuan(r.installments)}</td><td>${yuan(r.houseValue)}</td><td>${yuan(r.netWorth)}</td></tr>`;
     $('yearTable').innerHTML = `<thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${res.yearly.map(row).join('')}</tbody>`;
 
     if (!chart) return;
